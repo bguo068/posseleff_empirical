@@ -1,0 +1,9 @@
+tmp/
+.nextflow*
+.nextflow/**
+work/
+results/
+bin/hmmIBD
+samples/**
+!samples/explain_readme.py
+!samples/Readme.md
