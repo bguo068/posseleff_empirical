@@ -35,6 +35,12 @@ process BCFTOOLS_SPLIT_PREP_SINGLE_SAMPLE_VCF_AND_CALC_PLAF {
             bcftools +split ${grp_vcf} -S \${SPLIT} -Oz -o single_sample_vcfs
         done
         """
+    stub:
+    """
+    touch ${grp}_plaf.tsv
+    mkdir single_sample_vcfs
+    touch single_sample_vcfs/${grp}_{0..100}.vcf.gz
+    """
 }
 
 
@@ -94,6 +100,11 @@ process DEPLOID_PHASE_MONOCLONAL {
         # clean up
         rm tmp.vcf tmp2.vcf.gz tmp3.vcf.gz
     """
+    stub:
+    def prefix = "${grp}:${sample}"
+    """
+    touch  ${prefix}_out.vcf.gz ${prefix}_out.vcf.gz.csi
+    """
 }
 
 // The following two processes are used to merge many single-sample phased VCF
@@ -126,6 +137,10 @@ process BCFTOOLS_MERGE_SUBSUBPOP {
             """
     // NOTE: stdin for make file contain list of sample in the same order as vcfs
     // avoid explicitly paste all sample names on command line
+    stub:
+    """
+    touch  ${grp}_${subgrp}_merged.vcf{.gz,.gz.csi}
+    """
 }
 
 
@@ -142,6 +157,10 @@ process BCFTOOLS_MERGE_FILETER_SUBPOP {
             """ cat - > file_list.txt; bcftools view -i "F_MISSING<0.3" ${vcfs} -Oz -o ${grp}_merged.vcf.gz """
         else
             """ cat - > file_list.txt; bcftools merge -l file_list.txt | bcftools view -i "F_MISSING<0.3" -Oz -o ${grp}_merged.vcf.gz """
+    stub:
+    """
+    touch  ${grp}_merged.vcf.gz
+    """
 }
 
 
@@ -156,6 +175,10 @@ process BEAGLE_IMPUTE {
     script: 
     """ java -Xmx${task.memory.giga}g -jar ${params.beagle_jar} gt=${merged_vcf} map=${params.gmap} out=${grp}_imputed nthreads=${task.cpus} \\
         ${params.beagle_options} 
+    """
+    stub:
+    """
+    touch  ${grp}_imputed.vcf.gz
     """
 }
 
