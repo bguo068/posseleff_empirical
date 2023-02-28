@@ -24,6 +24,10 @@ process BCFTOOLS_CONCAT_MERGE_REGIONS_SIMPLIFY_ANNOTATION {
     script: """ bcftools concat ${vcf_lst} --threads ${task.cpus} | bcftools annotate -x INFO,^FORMAT/GT,^FORMAT/AD -Ob -o merged.bcf;
                 bcftools index merged.bcf """
     // NOTE: moimix needs format/AD to be in the vcf files
+    stub:
+    """
+    touch merged.bcf merged.bcf.csi
+    """
 }
 
 // This process involves dividing the full dataset into population subsets or
@@ -37,6 +41,10 @@ process BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES {
     input: tuple val(grp), path(sample_list_file); tuple path(merged_vcf), path(merged_vcf_idx)
     output: tuple val(grp), path("${grp}.vcf.gz")
     script: """bcftools view -S ${sample_list_file} ${merged_vcf} -Oz -o ${grp}.vcf.gz --force-samples"""
+    stub:
+    """
+    touch ${grp}.vcf.gz
+    """
 }
 
 // This process converts population VCF files into the GDS file format as
@@ -52,6 +60,10 @@ process SEQARRAY_VCF_TO_GDS {
     script: """#! /usr/bin/env Rscript
         library(SeqArray); seqVCF2GDS("${vcf}", "${grp}.gds", parallel=${task.cpus})
         """
+    stub:
+    """
+    touch ${grp}.gds
+    """
 }
 
 // Run moimix to generate Fws table for each samples of a population
@@ -71,6 +83,10 @@ process R_MOIMIX_FWS {
         df = data.frame(sample.id, fws_all)
         write.table(df, "${grp}.fws.txt", sep="\t", row.names=FALSE, quote=FALSE)
         """
+    stub:
+    """
+    touch ${grp}.fws.txt
+    """
 }
 
 workflow WF_CALC_POP_FWS {
