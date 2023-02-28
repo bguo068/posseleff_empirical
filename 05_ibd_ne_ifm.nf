@@ -184,7 +184,7 @@ process RUN_INFOMAP {
 
 
 
-workflow IBD_ANALYSES {
+workflow WF_IBD_ANALYSES {
     take:
         ch_grp_vcf // tuple val(grp), path(vcf)
     main:
@@ -232,6 +232,6 @@ workflow {
     ch_vcf = Channel.fromPath(params.vcf)
         .map{vcf -> def grp = vcf.getSimpleName().replaceAll('_.*', ''); [grp, vcf]}
 
-    IBD_ANALYSES(ch_vcf)
+    WF_IBD_ANALYSES(ch_vcf)
 
 }

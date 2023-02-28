@@ -336,7 +336,7 @@ workflow WF_PHASE_IMPUTE_POLYCLONAL {
 
         PUBLISH_MONO_ONLY_VCF(ch_mono_only_vcf)
 
-        ch_phased_imputed_polyclonal_monoclonal_vcf = BEAGLE_IMPUTE.out.concat(ch_mono_only_vcf).view()
+        ch_phased_imputed_polyclonal_monoclonal_vcf = BEAGLE_IMPUTE.out.concat(ch_mono_only_vcf)
         
 
 
