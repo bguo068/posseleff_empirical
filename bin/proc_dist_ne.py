@@ -74,7 +74,7 @@ nerunner = ibdne.IbdNeRunner(
     mincm=2,
     minregion=10,
 )
-nerunner.run(nthreads=10, mem_gb=20, dry_run=True)
+nerunner.run(nthreads=6, mem_gb=20, dry_run=True)
 
 # --- for ibd after removing ibd peaks ------------------------
 nerunner = ibdne.IbdNeRunner(
@@ -84,7 +84,7 @@ nerunner = ibdne.IbdNeRunner(
     mincm=2,
     minregion=10,
 )
-nerunner.run(nthreads=10, mem_gb=20, dry_run=True)
+nerunner.run(nthreads=6, mem_gb=20, dry_run=True)
 
 print(
     f"""
