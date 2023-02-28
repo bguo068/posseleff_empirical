@@ -48,7 +48,8 @@ process RENAME_CHR_FOR_VCF {
     bcftools annotate --rename-chr ${chr_name_map} ${vcf} -Oz -o ${grp}_chrs_renamed.vcf.gz 
     bcftools index ${grp}_chrs_renamed.vcf.gz 
     """
-    stub: """touch ${grp}_chrs_renamed.vcf.gz{,.csi}"""
+    stub: 
+    """touch ${grp}_chrs_renamed.vcf.gz{,.csi}"""
 
 }
 
@@ -61,6 +62,7 @@ process CALL_IBD {
         tuple val(label), val(chrno), path(vcf), path(index)
     output:
         tuple val(label), val(chrno), path("*_hmmibd.ibd"), emit: hmmibd
+
     script:
     def args_local = [
         vcf: "${label}_${chrno}.vcf.gz",
@@ -75,7 +77,7 @@ process CALL_IBD {
     stub:
     def prefix="${label}_${chrno}"
     """
-    touch ${prefix}{_hmmibd.ibd}
+    touch ${prefix}_hmmibd.ibd
     """
 }
 

@@ -34,7 +34,6 @@ workflow {
     ch_filterred_vcf = WF_FILTER_VCF.out
     WF_CALC_POP_FWS(ch_filterred_vcf, ch_input_subpop)
 
-/*
     // -----------  Run sumodule 3 -----------------
     ch_fws = WF_CALC_POP_FWS.out[0]
     ch_subpop_vcf = WF_CALC_POP_FWS.out[1]
@@ -50,5 +49,4 @@ workflow {
     ch_phased_imputed_grp_vcf.filter{grp, subpop_vcf-> grp in ["ESEA", "WAF"] }
     // Run
     WF_IBD_ANALYSES(ch_phased_imputed_grp_vcf)    
-*/
 }
