@@ -26,6 +26,10 @@ process BCFTOOLS_VIEW_PASS_BIALLELIC {
     if [ -f ${vcf}.csi ] ; then bcftools index ${vcf};  fi
     bcftools view ${S_args} ${vcf} -Ou | bcftools view -f PASS -Ou | bcftools view -v snps -Ou | bcftools view -m2 -M2 -Ob -o ${interval}.bcf
     """
+    stub:
+    """
+    touch ${interval}.bcf
+    """
 }
 
 // The process filters VCF sites by the site-missingness (what percentage of samples have 
@@ -41,6 +45,10 @@ process BCFTOOLS_VIEW_F_MISSING1_WITH_PSC_STATS {
     script: """ bcftools view -i "F_MISSING<${params.high_vmiss}"  ${vcf} -Ob -o ${interval}_fmiss1.bcf
                 bcftools stats -s- ${interval}_fmiss1.bcf > ${interval}_fmiss1_stats.txt
             """
+    stub:
+    """
+    touch ${interval}_fmiss1.bcf ${interval}_fmiss1_stats.txt
+    """
 } 
 
 // Base on per-sample stats for all interval-VCF files across the whole genome, 
@@ -52,6 +60,10 @@ process PANDAS_IMISS1_SAMPLES_TO_KEEP {
     input: path(vcf_stats)
     output: path("samples_to_keep_imiss1.txt")
     script: """ get_samples_with_max_imiss.py --bcftools_psc_stats_files *stats.txt --max_imiss ${params.high_imiss} --out samples_to_keep_imiss1.txt """
+    stub:
+    """
+    touch samples_to_keep_imiss1.txt
+    """
 }
 
 // This process does the actual sample filtering (based on missingness).
@@ -63,6 +75,10 @@ process BCFTOOLS_VIEW_FILTER_SAMPLE_BY_IMISS1 {
     input: tuple val(interval), path(vmiss1_bcf); path(samples_to_keep_imiss1)
     output: tuple val(interval), path('*_fmiss1_imiss1.bcf')
     script: """ bcftools index ${vmiss1_bcf}; bcftools view -S ${samples_to_keep_imiss1} ${vmiss1_bcf} | bcftools view -i "MAC>0" -Ob -o ${interval}_fmiss1_imiss1.bcf"""
+    stub:
+    """
+    touch ${interval}_fmiss1_imiss1.bcf
+    """
 }
 
 // This process is similar to `BCFTOOLS_VIEW_F_MISSING1_WITH_PSC_STATS` but uses
@@ -75,6 +91,10 @@ process BCFTOOLS_VIEW_F_MISSING2_WITH_PSC_STATS {
     script: """ bcftools view -i "F_MISSING<${params.low_vmiss}"  ${vcf} -Ob -o ${interval}_fmiss2.bcf
                 bcftools stats -s- ${interval}_fmiss2.bcf > ${interval}_fmiss2_stats.txt
             """
+    stub:
+    """
+    touch ${interval}_fmiss2.bcf ${interval}_fmiss2_stats.txt
+    """
 } 
 
 // This process is similar to `PANDAS_IMISS1_SAMPLES_TO_KEEP` but uses
@@ -85,6 +105,10 @@ process PANDAS_IMISS2_SAMPLES_TO_KEEP {
     input: path(vcf_stats)
     output: path("samples_to_keep_imiss2.txt")
     script: """ get_samples_with_max_imiss.py --bcftools_psc_stats_files *stats.txt --max_imiss ${params.low_imiss} --out samples_to_keep_imiss2.txt """
+    stub:
+    """
+    touch samples_to_keep_imiss2.txt
+    """
 }
 
 // This process is similar to `BCFTOOLS_VIEW_FILTER_SAMPLE_BY_IMISS1` but uses
@@ -95,6 +119,10 @@ process BCFTOOLS_VIEW_FILTER_SAMPLE_BY_IMISS2 {
     input: tuple val(interval), path(vmiss2_bcf); path(samples_to_keep_imiss2)
     output: tuple val(interval), path('*_fmiss2_imiss2.bcf')
     script: """ bcftools index ${vmiss2_bcf}; bcftools view -S ${samples_to_keep_imiss2} ${vmiss2_bcf} | bcftools view -i "MAC>0" -Ob -o ${interval}_fmiss2_imiss2.bcf"""
+    stub:
+    """
+    touch ${interval}_fmiss2_imiss2.bcf
+    """
 }
 
 // This process filter out rare variants
@@ -104,6 +132,10 @@ process BCFTOOLS_VIEW_FILTER_SITE_BY_MAF {
     input: tuple val(interval), path(imiss2_bcf)
     output: tuple val(interval), path("*_fmiss2_imiss2_maf.vcf.gz")
     script: """ bcftools view -q ${params.min_maf}:minor ${imiss2_bcf} -Oz -o ${interval}_fmiss2_imiss2_maf.vcf.gz"""
+    stub:
+    """
+    touch ${interval}_fmiss2_imiss2_maf.vcf.gz
+    """
 }
 
 // --------------------------- SUBWORKFLOW --------------------------------------------
