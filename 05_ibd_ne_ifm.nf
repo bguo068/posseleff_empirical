@@ -168,10 +168,12 @@ process RUN_INFOMAP {
         tuple val(label), val(are_peaks_removed), path("*_member.pq")
     script:
     def meta = params.meta ? file(params.meta) : ''
+    def cut_mode = are_peaks_removed? 'rmpeaks': 'orig'
     def args_local = [
         ibd_pq: ibd_pq,
         meta: meta,
         label: label,
+        cut_mode: cut_mode,
         ntrails: params.ifm_ntrails,
         transform: params.ifm_transform,
     ].collect{k, v-> v ? "--${k} ${v}": " "}.join(" ")
@@ -179,8 +181,9 @@ process RUN_INFOMAP {
     run_infomap.py ${args_local}
     """
     stub:
+    def cut_mode = are_peaks_removed? 'rmpeaks': 'orig'
     """
-    touch ${label}_member.pq
+    touch ${label}_${cut_mode}_member.pq
     """
 }
 

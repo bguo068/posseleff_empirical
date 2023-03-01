@@ -11,6 +11,7 @@ def parse_args():
     p.add_argument("--ibd_pq", type=str, required=True)
     p.add_argument("--meta", type=str, default="")
     p.add_argument("--label", type=str, required=True)
+    p.add_argument("--cut_mode", type=str, required=True)
     p.add_argument("--ntrails", type=int, default=1000)
     p.add_argument(
         "--transform", type=str, choices=["square", "cube", "none"], default="square"
@@ -50,7 +51,7 @@ def main():
     args = parse_args()
     member_df = run(args)
 
-    ofs = f"{args.label}_member.pq"
+    ofs = f"{args.label}_{args.cut_mode}_member.pq"
     member_df.to_parquet(ofs)
     print(member_df)
 
