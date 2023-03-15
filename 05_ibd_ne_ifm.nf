@@ -88,6 +88,7 @@ process PROC_DIST_NE {
     publishDir "${publish_dir}/${label}/ne_input/", pattern: "*.map", mode: 'symlink'
     publishDir "${publish_dir}/${label}/ne_input/", pattern: "*.ibd.gz", mode: 'symlink'
     publishDir "${publish_dir}/${label}/ibddist_ibd/", pattern: "*_ibddist_ibd.pq", mode: 'symlink'
+    publishDir "${publish_dir}/${label}/ibdcov/", pattern: "*.cov.pq", mode: 'symlink'
 
     input:
         tuple val(label), path(ibd_lst)
@@ -97,6 +98,7 @@ process PROC_DIST_NE {
         tuple val(label), path("ibdne.jar"), path("*_rmpeaks.sh"),  \
                 path("*_rmpeaks.map"), path("*_rmpeaks.ibd.gz"), emit: ne_input_rmpeaks
         tuple val(label), path("*_ibddist_ibd.pq"), emit: ibddist_ibd_pq
+        tuple val(label), path("*.cov.pq"), emit: ibdcov
     script:
     def args_local = [
         ibd_files: "${ibd_lst}", // path is a blank separate list
@@ -161,7 +163,7 @@ process RUN_IBDNE {
 
 process RUN_INFOMAP {
     tag "${label}_${are_peaks_removed}"
-    publishDir "${publish_dir}/${label}_${label}/ifm_output/",  mode: 'symlink'
+    publishDir "${publish_dir}/${label}/ifm_output/",  mode: 'symlink'
     input:
         tuple val(label), path(ibd_pq), val(are_peaks_removed)
     output:
