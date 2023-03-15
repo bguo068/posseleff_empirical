@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
-import pandas as pd
-import numpy as np
-from ibdutils.utils.ibdutils import IBD, Genome
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+
+import numpy as np
+import pandas as pd
+from ibdutils.utils.ibdutils import IBD, Genome
 
 
 def parse_args():
@@ -16,6 +17,8 @@ def parse_args():
     p.add_argument(
         "--transform", type=str, choices=["square", "cube", "none"], default="square"
     )
+    p.add_argument("--ifm_mincm", type=float, default=2)
+    p.add_argument("--ifm_mingwcm", type=float, default=5)
     args = p.parse_args()
     if args.transform == "none":
         args.transform = None
@@ -39,7 +42,7 @@ def run(args) -> pd.DataFrame:
     else:
         meta = pd.read_csv(args.meta, sep="\t")
 
-    mat = ibd.make_ibd_matrix()
+    mat = ibd.make_ibd_matrix(min_seg_cm=args.ifm_mincm, min_gw_ibd_cm=args.ifm_mingwcm)
     member_df = ibd.call_infomap_get_member_df(
         mat, meta, trials=args.ntrails, transform=args.transform
     )
