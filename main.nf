@@ -46,7 +46,8 @@ workflow {
     // -----------  Run sumodule 5 -----------------
     ch_phased_imputed_grp_vcf = WF_PHASE_IMPUTE_POLYCLONAL.out
     // select one reps for high and low transmission settings
-    ch_phased_imputed_grp_vcf.filter{grp, subpop_vcf-> grp in ["ESEA", "WAF"] }
+    ch_phased_imputed_grp_vcf_filt = ch_phased_imputed_grp_vcf.filter{grp, subpop_vcf-> 
+        grp in ["ESEA", "WAF"] }
     // Run
-    WF_IBD_ANALYSES(ch_phased_imputed_grp_vcf)    
+    WF_IBD_ANALYSES(ch_phased_imputed_grp_vcf_filt)    
 }
