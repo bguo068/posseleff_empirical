@@ -31,6 +31,14 @@ ofs_ibd_pq = f"{label}_ibddist_ibd.pq"
 # store combined IBD for IBD distribution analysis
 ibd._df.to_parquet(ofs_ibd_pq)
 
+# remove short segments
+ibd.filter_ibd_by_length(min_seg_cm=4)
+
+# calculate coverage and remove peaks
+ibd_all = ibd.duplicate()
+ibd_all.calc_ibd_cov()
+ibd_all.find_peaks()
+ibd_all._cov_df.to_parquet(f"{label}_orig_all.cov.pq")
 
 # remove highly relatedness samples
 mat = ibd.make_ibd_matrix()
@@ -53,6 +61,7 @@ ibd.convert_to_heterozygous_diploids(remove_hbd=True)
 # calculate coverage and remove peaks
 ibd.calc_ibd_cov()
 ibd.find_peaks()
+ibd._cov_df.to_parquet(f"{label}_orig_unrel.cov.pq")
 
 ibd2 = ibd.duplicate(f"{label}_rmpeaks")
 ibd2.remove_peaks()
@@ -86,6 +95,7 @@ nerunner = ibdne.IbdNeRunner(
 )
 nerunner.run(nthreads=6, mem_gb=20, dry_run=True)
 
+
 print(
     f"""
       output files:
@@ -94,6 +104,7 @@ print(
         {label}_orig.sh
         {label}_orig.map
         {label}_orig.ibd.gz
+        {label}_orig.cov.pq
         {label}_rmpeaks.sh
         {label}_rmpeaks.map
         {label}_rmpeaks.ibd.gz
