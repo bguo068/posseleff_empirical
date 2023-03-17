@@ -4,12 +4,12 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 import numpy as np
 import pandas as pd
-from ibdutils.utils.ibdutils import IBD, Genome
+from ibdutils.utils.ibdutils import IBD
 
 
 def parse_args():
     p = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    p.add_argument("--ibd_pq", type=str, required=True)
+    p.add_argument("--ibd_obj", type=str, required=True)
     p.add_argument("--meta", type=str, default="")
     p.add_argument("--label", type=str, required=True)
     p.add_argument("--cut_mode", type=str, required=True)
@@ -27,10 +27,7 @@ def parse_args():
 
 
 def run(args) -> pd.DataFrame:
-
-    g = Genome.get_genome("simu_14chr_100cm")
-    ibd = IBD(genome=g, label=f"gsid_{args.label}")
-    ibd.read_ibd([args.ibd_pq], format="parquet")
+    ibd = IBD.pickle_load(args.ibd_obj)
 
     # prepare meta dataframe
     if args.meta == "":

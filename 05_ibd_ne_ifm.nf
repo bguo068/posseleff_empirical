@@ -97,8 +97,9 @@ process PROC_DIST_NE {
                 path("*_orig.map"), path("*_orig.ibd.gz"), emit: ne_input_orig
         tuple val(label), path("ibdne.jar"), path("*_rmpeaks.sh"),  \
                 path("*_rmpeaks.map"), path("*_rmpeaks.ibd.gz"), emit: ne_input_rmpeaks
-        tuple val(label), path("*_ibddist_ibd.pq"), emit: ibddist_ibd_pq
-        tuple val(label), path("*.cov.pq"), emit: ibdcov
+        tuple val(label), path("*_ibddist.ibdobj.gz"), emit: ibddist_ibd_obj
+        tuple val(label), path("*.ibdcov.ibdobj.gz"), emit: cov_ibd_obj
+        tuple val(label), path("*.ibdne.ibdobj.gz"), emit: ne_ibd_obj
     script:
     def args_local = [
         ibd_files: "${ibd_lst}", // path is a blank separate list
@@ -113,19 +114,24 @@ process PROC_DIST_NE {
     touch ${label}{_orig.sh,_orig.map,_orig.ibd.gz}
     touch ${label}{_rmpeaks.sh,_rmpeaks.map,_rmpeaks.ibd.gz}
     touch ${label}_ibddist_ibd.pq
+    touch ${label}_ibddist.ibdobj.gz
+    touch ${label}_orig_all.ibdcov.ibdobj.gz 
+    touch ${label}_orig_unrel.ibdcov.ibdobj.gz
+    touch ${label}_orig.ne.ibdobj.gz
+    touch ${label}_rmpeaks.ne.ibdobj.gz
     """
 }
 
 process PROC_INFOMAP {
     tag "${label}"
 
-    publishDir "${publish_dir}/${label}/ifm_input/", pattern: "*_ibd.pq", mode: 'symlink'
+    publishDir "${publish_dir}/${label}/ifm_input/", pattern: "*.ibdobj.gz", mode: 'symlink'
 
     input:
         tuple val(label), path(ibd_lst)
     output:
-        tuple val(label), path("*_ifm_orig_ibd.pq"), emit: ifm_orig_ibd_pq
-        tuple val(label), path("*_ifm_rmpeaks_ibd.pq"), emit: ifm_rmpeaks_ibd_pq
+        tuple val(label), path("*_ifm_orig.ibdobj.gz"), emit: ifm_orig_ibd_obj
+        tuple val(label), path("*_ifm_rmpeaks.ibdobj.gz"), emit: ifm_rmpeaks_ibd_obj
     script:
     def args_local = [
         ibd_files: "${ibd_lst}", // path is a blank separate list
@@ -136,7 +142,7 @@ process PROC_INFOMAP {
     """
     stub:
     """
-    touch ${label}{_ifm_orig_ibd.pq,_ifm_rmpeaks_ibd.pq}
+    touch ${label}{_ifm_orig.ibdobj.gz,_ifm_rmpeaks.ibdobj.gz}
     """
 }
 
@@ -165,14 +171,14 @@ process RUN_INFOMAP {
     tag "${label}_${are_peaks_removed}"
     publishDir "${publish_dir}/${label}/ifm_output/",  mode: 'symlink'
     input:
-        tuple val(label), path(ibd_pq), val(are_peaks_removed)
+        tuple val(label), path(ibd_obj), val(are_peaks_removed)
     output:
         tuple val(label), val(are_peaks_removed), path("*_member.pq")
     script:
     def meta = params.meta ? file(params.meta) : ''
     def cut_mode = are_peaks_removed? 'rmpeaks': 'orig'
     def args_local = [
-        ibd_pq: ibd_pq,
+        ibd_obj: ibd_obj,
         meta: meta,
         label: label,
         cut_mode: cut_mode,
@@ -225,9 +231,9 @@ workflow WF_IBD_ANALYSES {
         RUN_IBDNE(ch_ne_in)
 
         ch_ifm_in = (
-            PROC_INFOMAP.out.ifm_orig_ibd_pq.map{label, ibd->[label, ibd, false]}
+            PROC_INFOMAP.out.ifm_orig_ibd_obj.map{label, ibd->[label, ibd, false]}
         ).concat(
-            PROC_INFOMAP.out.ifm_rmpeaks_ibd_pq.map{label, ibd->[label, ibd, true]}
+            PROC_INFOMAP.out.ifm_rmpeaks_ibd_obj.map{label, ibd->[label, ibd, true]}
         )
 
         RUN_INFOMAP(ch_ifm_in)

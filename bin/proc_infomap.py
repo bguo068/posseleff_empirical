@@ -15,12 +15,13 @@ label = args.label
 # read ibd
 genome_Pf3D7_numeric = ibdutils.Genome.get_genome("Pf3D7")
 ibd = ibdutils.IBD(genome=genome_Pf3D7_numeric, label="orig")
-ibd.read_ibd(ibd_fn_lst=args.ibd_files)
+# remove sample name suffix (haploid genome ratio)
+ibd.read_ibd(ibd_fn_lst=args.ibd_files, rm_sample_name_suffix=True)
 
 
 # output files:
-ofs_ifm_orig_ibd_pq = f"{label}_ifm_orig_ibd.pq"
-ofs_ifm_rmpeaks_ibd_pq = f"{label}_ifm_rmpeaks_ibd.pq"
+of_ifm_orig_ibdobj = f"{label}_ifm_orig.ibdobj.gz"
+of_ifm_rmpeaks_ibdobj = f"{label}_ifm_rmpeaks.ibdobj.gz"
 
 
 # remove highly relatedness samples
@@ -36,5 +37,5 @@ ibd.find_peaks()
 ibd2 = ibd.duplicate("rmpeak")
 ibd2.remove_peaks()
 
-ibd._df.to_parquet(ofs_ifm_orig_ibd_pq)
-ibd2._df.to_parquet(ofs_ifm_rmpeaks_ibd_pq)
+ibd.pickle_dump(of_ifm_orig_ibdobj)
+ibd2.pickle_dump(of_ifm_rmpeaks_ibdobj)

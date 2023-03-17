@@ -28,20 +28,22 @@ genome_Pf3D7_numeric = ibdutils.Genome.get_genome("Pf3D7")
 # create ibd obj
 ibd = ibdutils.IBD(genome=genome_Pf3D7_numeric, label=f"{label}_orig")
 
-# read ibd from files containing IBD segment info
-ibd.read_ibd(ibd_fn_lst=args.ibd_files)
+# read ibd from files each containing IBD segment info for a chromosome
+# and remove sample name suffix (such as "~0.9-0.2") that was used
+# for carrying haploid genome ratios
+ibd.read_ibd(ibd_fn_lst=args.ibd_files, rm_sample_name_suffix=True)
 
-# ---- save origin IBD as parquet for distribution analyses
-ofs_ibd_pq = f"{label}_ibddist_ibd.pq"
-ibd._df.to_parquet(ofs_ibd_pq)
+# ---- save origin IBD obj for distribution analyses
+of_ibddist_ibdobj = f"{label}_ibddist.ibdobj.gz"
+ibd.pickle_dump(of_ibddist_ibdobj)
 
 
-# ---- save ibd coverage (haploid) for all samples
+# ---- save IBD with coverage for all samples (haploid)
 ibd_all = ibd.duplicate()
 ibd_all.filter_ibd_by_length(min_seg_cm=ibdne_mincm)
 ibd_all.calc_ibd_cov()
 ibd_all.find_peaks()
-ibd_all._cov_df.to_parquet(f"{label}_orig_all.cov.pq")
+ibd_all.pickle_dump(f"{label}_orig_all.ibdcov.ibdobj.gz")
 
 # remove highly related samples
 mat = ibd.make_ibd_matrix()
@@ -53,7 +55,7 @@ ibd_unrel = ibd.duplicate()
 ibd_unrel.filter_ibd_by_length(min_seg_cm=ibdne_mincm)
 ibd_unrel.calc_ibd_cov()
 ibd_unrel.find_peaks()
-ibd_unrel._cov_df.to_parquet(f"{label}_orig_unrel.cov.pq")
+ibd_unrel.pickle_dump(f"{label}_orig_unrel.ibdcov.ibdobj.gz")
 
 # remove short segments
 ibd.filter_ibd_by_length(min_seg_cm=ibdne_mincm)
@@ -94,6 +96,8 @@ nerunner = ibdne.IbdNeRunner(
 )
 nerunner.run(nthreads=6, mem_gb=20, dry_run=True)
 
+# save of OBJ copy
+ibd.pickle_dump(f"{label}_orig.ibdne.ibdobj.gz")
 
 # remove peaks
 
@@ -112,11 +116,13 @@ nerunner = ibdne.IbdNeRunner(
 )
 nerunner.run(nthreads=6, mem_gb=20, dry_run=True)
 
+# save of OBJ copy
+ibd.pickle_dump(f"{label}_rmpeaks.ibdne.ibdobj.gz")
+
 
 print(
     f"""
       output files:
-        {ofs_ibd_pq}
         ibdne.jar
         {label}_orig.sh
         {label}_orig.map
@@ -125,5 +131,10 @@ print(
         {label}_rmpeaks.sh
         {label}_rmpeaks.map
         {label}_rmpeaks.ibd.gz
-      """
+        {label}_ibddist.ibdobj.gz
+        {label}_orig_all.ibdcov.ibdobj.gz
+        {label}_orig_unrel.ibdcov.ibdobj.gz
+        {label}_orig.ibdne.ibdobj.gz
+        {label}_rmpeaks.ibdne.ibdobj.gz
+    """
 )
