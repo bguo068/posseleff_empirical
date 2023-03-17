@@ -23,7 +23,7 @@ params.ifm_transform = ["square", "cube", "none"][0]
 params.ifm_ntrails = 1000
 
 // imputed vcf (glob string, work with pattern such as '*.vcf.gz')
-params.vcf = 'input/*.vcf.gz'  
+params.vcf = 'input/*.vcf.gz'  // test data can be found ./test_data/SAM_imputed.vcf.gz
 params.meta = ""
 
 def publish_dir = "${params.outdir ?: launchDir}/05_ibdanalysis"
