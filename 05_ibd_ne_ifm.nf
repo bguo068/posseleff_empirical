@@ -1,9 +1,9 @@
 import java.nio.file.*
-import groovy.json.* 
+import groovy.json.*
 
 nextflow.enable.dsl=2
 
-params.chrname_map = "$projectDir/assets/chrname_map.tsv" 
+params.chrname_map = "$projectDir/assets/chrname_map.tsv"
 params.num_chrs = params.test ? 2: 14
 
 // hmmibd
@@ -15,7 +15,7 @@ params.r = 6.67e-7
 params.maf = params.test ? 0.00001: 0.01
 params.mincm = 2.0
 
-params.ibdne_mincm = 4 
+params.ibdne_mincm = 4
 params.ibdne_minregion = 10
 
 // infomap parameters
@@ -37,19 +37,22 @@ process LOG_PARAMS {
 }
 
 
-// Rename chromosome names into integers
+// Rename chromosome names into integers and subset sites for a chromosome
 process RENAME_CHR_FOR_VCF {
-    tag "rename_vcf_chr_${grp}"
-    publishDir "$publish_dir/01_rename_vcf_chr"
-    input: tuple val(grp), path(vcf), path(chr_name_map)
-    output: tuple val(grp), path('*_chrs_renamed.vcf.gz'), path("*_chrs_renamed.vcf.gz.csi")
+    tag "vcf_chr_${grp}"
+    publishDir "$publish_dir/01_vcf_chr"
+    input: tuple val(grp), path(vcf), path(chr_name_map), val(chrno)
+    output: tuple val(grp), val(chrno), \
+        path('*_chr*.vcf.gz'), path("*_chr*.vcf.gz.csi")
     script: """
     bcftools index -f ${vcf}
-    bcftools annotate --rename-chr ${chr_name_map} ${vcf} -Oz -o ${grp}_chrs_renamed.vcf.gz 
-    bcftools index ${grp}_chrs_renamed.vcf.gz 
+    bcftools annotate --rename-chr ${chr_name_map} ${vcf} -Oz -o ${grp}_renamed.vcf.gz
+    bcftools index ${grp}_renamed.vcf.gz
+    bcftools view -r ${chrno} ${grp}_renamed.vcf.gz -Oz -o ${grp}_chr${chrno}.vcf.gz
+    bcftools index ${grp}_chr${chrno}.vcf.gz
     """
-    stub: 
-    """touch ${grp}_chrs_renamed.vcf.gz{,.csi}"""
+    stub:
+    """touch ${grp}_chr${chrno}.vcf.gz{,.csi}"""
 
 }
 
@@ -58,7 +61,7 @@ process CALL_IBD {
     tag "hmmibd_${label}_ch${chrno}"
     publishDir "$publish_dir/02_callibd/hmmibd", pattern: "*_hmmibd.ibd", mode: 'symlink'
 
-    input: 
+    input:
         tuple val(label), val(chrno), path(vcf), path(index)
     output:
         tuple val(label), val(chrno), path("*_hmmibd.ibd"), emit: hmmibd
@@ -91,7 +94,7 @@ process PROC_DIST_NE {
     publishDir "${publish_dir}/${label}/ibdcov/", pattern: "*.cov.pq", mode: 'symlink'
 
     input:
-        tuple val(label), path(ibd_lst)
+        tuple val(label), path(ibd_lst), path(vcf_lst)
     output:
         tuple val(label), path("ibdne.jar"), path("*_orig.sh"), \
                 path("*_orig.map"), path("*_orig.ibd.gz"), emit: ne_input_orig
@@ -103,19 +106,21 @@ process PROC_DIST_NE {
     script:
     def args_local = [
         ibd_files: "${ibd_lst}", // path is a blank separate list
+        vcf_files: "${vcf_lst}", // path is a blank separate list
         label: label,
     ].collect{k, v-> "--${k} ${v}"}.join(" ")
     """
-    proc_dist_ne.py ${args_local} 
+    proc_dist_ne.py ${args_local}
     """
     stub:
     """
     touch ibdne.jar
     touch ${label}{_orig.sh,_orig.map,_orig.ibd.gz}
+    touch ${label}_{orig,rmpeaks}.ibdne.ibdobj.gz
     touch ${label}{_rmpeaks.sh,_rmpeaks.map,_rmpeaks.ibd.gz}
     touch ${label}_ibddist_ibd.pq
     touch ${label}_ibddist.ibdobj.gz
-    touch ${label}_orig_all.ibdcov.ibdobj.gz 
+    touch ${label}_orig_all.ibdcov.ibdobj.gz
     touch ${label}_orig_unrel.ibdcov.ibdobj.gz
     touch ${label}_orig.ne.ibdobj.gz
     touch ${label}_rmpeaks.ne.ibdobj.gz
@@ -128,13 +133,15 @@ process PROC_INFOMAP {
     publishDir "${publish_dir}/${label}/ifm_input/", pattern: "*.ibdobj.gz", mode: 'symlink'
 
     input:
-        tuple val(label), path(ibd_lst)
+        tuple val(label), path(ibd_lst), path(vcf_lst)
+
     output:
         tuple val(label), path("*_ifm_orig.ibdobj.gz"), emit: ifm_orig_ibd_obj
         tuple val(label), path("*_ifm_rmpeaks.ibdobj.gz"), emit: ifm_rmpeaks_ibd_obj
     script:
     def args_local = [
         ibd_files: "${ibd_lst}", // path is a blank separate list
+        vcf_files: "${vcf_lst}", // path is a blank separate list
         label: label,
     ].collect{k, v-> "--${k} ${v}"}.join(" ")
     """
@@ -204,18 +211,26 @@ workflow WF_IBD_ANALYSES {
 
         LOG_PARAMS()
 
-        RENAME_CHR_FOR_VCF( ch_grp_vcf.map{grp,vcf->[grp,vcf,file(params.chrname_map)]})
-        
-        ch_grp_chr_vcf = RENAME_CHR_FOR_VCF.out.combine(Channel.fromList(1..params.num_chrs))
-            .map {grp, vcf, index, chrom-> [grp, chrom, vcf, index]}
-        
+        RENAME_CHR_FOR_VCF(
+            ch_grp_vcf.map{grp,vcf->[grp,vcf,file(params.chrname_map)]}
+            .combine(Channel.fromList(1..params.num_chrs))
+            ) // [grp, vcf, chrnamemap, chrno]
+
+        ch_grp_chr_vcf = RENAME_CHR_FOR_VCF.out
+             // [grp, chrno, vcf, idx]
+
         CALL_IBD(ch_grp_chr_vcf)
 
-        ch_ibd_gw = CALL_IBD.out.hmmibd.map{label, chrno, ibd -> 
-            [ groupKey(label, params.num_chrs),  [chrno, ibd]  ]}
+        ch_ibd_gw = CALL_IBD.out.hmmibd.combine(
+                ch_grp_chr_vcf.map{grp,chrno,vcf,index->[grp,chrno,vcf]},
+                by: [0, 1]
+            )
+            .map{label, chrno, ibd, vcf ->
+                [ groupKey(label, params.num_chrs),  [chrno, ibd, vcf]  ]}
             .groupTuple(by: 0, sort: {a, b -> a[0]<=> b[0]} )
-            .map{label, ll-> [label, ll.collect{pair->pair[1]} ] }
-        
+            .map{label, ll->
+                [label, ll.collect{arr->arr[1]},ll.collect{arr->arr[2]} ] }
+
         PROC_DIST_NE(ch_ibd_gw)
 
         PROC_INFOMAP(ch_ibd_gw)
@@ -227,7 +242,7 @@ workflow WF_IBD_ANALYSES {
             PROC_DIST_NE.out.ne_input_rmpeaks.map{label, ibdne_jar, script, gmap, ibd ->
             [label, ibdne_jar, script, gmap, ibd , true] }
          )
-        
+
         RUN_IBDNE(ch_ne_in)
 
         ch_ifm_in = (
