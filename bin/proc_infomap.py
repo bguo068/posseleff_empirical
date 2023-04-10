@@ -6,6 +6,7 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 # parse arguments
 pa = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 pa.add_argument("--ibd_files", type=str, nargs=14, required=True)
+pa.add_argument("--vcf_files", type=str, nargs=14, required=True)
 pa.add_argument("--label", type=str, required=True)
 args = pa.parse_args()
 
@@ -33,6 +34,11 @@ ibd.subset_ibd_by_samples(subset_samples=unrelated_samples)
 # calculate coverage and remove peaks
 ibd.calc_ibd_cov()
 ibd.find_peaks()
+
+# calculate XiR,s and filter peaks
+xirs_df = ibd.calc_xirs(vcf_fn_lst=args.vcf_files, min_maf=0.01)
+ibd.filter_peaks_by_xirs(xirs_df)
+
 
 ibd2 = ibd.duplicate("rmpeak")
 ibd2.remove_peaks()

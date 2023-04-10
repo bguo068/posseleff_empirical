@@ -10,6 +10,7 @@ ibd_jar_default = str(Path(__file__).parent / "ibdne.jar")
 # parse arguments
 pa = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 pa.add_argument("--ibd_files", type=str, nargs=14, required=True)
+pa.add_argument("--vcf_files", type=str, nargs=14, required=True)
 pa.add_argument("--label", type=str, required=True)
 pa.add_argument("--ibdne_jar", type=str, default=ibd_jar_default)
 pa.add_argument("--ibdne_mincm", type=float, default=4)
@@ -75,6 +76,22 @@ ibd.flatten_diploid_ibd()
 ibd.calc_ibd_cov()
 ibd.find_peaks()
 
+# calculate XiR,s and filter peaks
+xirs_df = ibd.calc_xirs(vcf_fn_lst=args.vcf_files, min_maf=0.01)
+ibd.filter_peaks_by_xirs(xirs_df)
+
+# save of OBJ copy
+ibd.pickle_dump(f"{label}_orig.ibdne.ibdobj.gz")
+
+# remove peaks
+
+ibd2 = ibd.duplicate(f"{label}_rmpeaks")
+ibd2.remove_peaks()
+
+# save of OBJ copy
+ibd.pickle_dump(f"{label}_rmpeaks.ibdne.ibdobj.gz")
+
+
 # ---- save ibd for ibdne call
 
 # link ibdne.jar file
@@ -96,14 +113,6 @@ nerunner = ibdne.IbdNeRunner(
 )
 nerunner.run(nthreads=6, mem_gb=20, dry_run=True)
 
-# save of OBJ copy
-ibd.pickle_dump(f"{label}_orig.ibdne.ibdobj.gz")
-
-# remove peaks
-
-ibd2 = ibd.duplicate(f"{label}_rmpeaks")
-ibd2.remove_peaks()
-
 
 # ---- save ibd for ibdne call
 # for ibd after removing ibd peaks ------------------------
@@ -115,9 +124,6 @@ nerunner = ibdne.IbdNeRunner(
     minregion=ibdne_minregion,
 )
 nerunner.run(nthreads=6, mem_gb=20, dry_run=True)
-
-# save of OBJ copy
-ibd.pickle_dump(f"{label}_rmpeaks.ibdne.ibdobj.gz")
 
 
 print(
