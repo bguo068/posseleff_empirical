@@ -90,8 +90,7 @@ process PROC_DIST_NE {
     publishDir "${publish_dir}/${label}/ne_input/", pattern: "*.sh", mode: 'symlink'
     publishDir "${publish_dir}/${label}/ne_input/", pattern: "*.map", mode: 'symlink'
     publishDir "${publish_dir}/${label}/ne_input/", pattern: "*.ibd.gz", mode: 'symlink'
-    publishDir "${publish_dir}/${label}/ibddist_ibd/", pattern: "*_ibddist_ibd.pq", mode: 'symlink'
-    publishDir "${publish_dir}/${label}/ibdcov/", pattern: "*.cov.pq", mode: 'symlink'
+    publishDir "${publish_dir}/${label}/ibdobj/", pattern: "*.ibdobj.gz", mode: 'symlink'
 
     input:
         tuple val(label), path(ibd_lst), path(vcf_lst)
@@ -115,15 +114,11 @@ process PROC_DIST_NE {
     stub:
     """
     touch ibdne.jar
-    touch ${label}{_orig.sh,_orig.map,_orig.ibd.gz}
-    touch ${label}_{orig,rmpeaks}.ibdne.ibdobj.gz
-    touch ${label}{_rmpeaks.sh,_rmpeaks.map,_rmpeaks.ibd.gz}
-    touch ${label}_ibddist_ibd.pq
+    touch ${label}_{orig,rmpeaks}.{sh,map,ibd.gz}
     touch ${label}_ibddist.ibdobj.gz
+    touch ${label}_{orig,rmpeaks}.ibdne.ibdobj.gz
     touch ${label}_orig_all.ibdcov.ibdobj.gz
     touch ${label}_orig_unrel.ibdcov.ibdobj.gz
-    touch ${label}_orig.ne.ibdobj.gz
-    touch ${label}_rmpeaks.ne.ibdobj.gz
     """
 }
 
