@@ -42,8 +42,12 @@ ibd.pickle_dump(of_ibddist_ibdobj)
 # ---- save IBD with coverage for all samples (haploid)
 ibd_all = ibd.duplicate()
 ibd_all.filter_ibd_by_length(min_seg_cm=ibdne_mincm)
+ibd_all.convert_to_heterozygous_diploids(remove_hbd=True)
+ibd_all.flatten_diploid_ibd()
 ibd_all.calc_ibd_cov()
 ibd_all.find_peaks()
+xirs_df = ibd_all.calc_xirs(vcf_fn_lst=args.vcf_files, min_maf=0.01)
+ibd_all.filter_peaks_by_xirs(xirs_df)
 ibd_all.pickle_dump(f"{label}_orig_all.ibdcov.ibdobj.gz")
 
 # remove highly related samples
@@ -54,8 +58,12 @@ ibd.subset_ibd_by_samples(subset_samples=unrelated_samples)
 # ---- save ibd coverage (haploid) for unrelated samples
 ibd_unrel = ibd.duplicate()
 ibd_unrel.filter_ibd_by_length(min_seg_cm=ibdne_mincm)
+ibd_unrel.convert_to_heterozygous_diploids(remove_hbd=True)
+ibd_unrel.flatten_diploid_ibd()
 ibd_unrel.calc_ibd_cov()
 ibd_unrel.find_peaks()
+xirs_df = ibd_unrel.calc_xirs(vcf_fn_lst=args.vcf_files, min_maf=0.01)
+ibd_unrel.filter_peaks_by_xirs(xirs_df)
 ibd_unrel.pickle_dump(f"{label}_orig_unrel.ibdcov.ibdobj.gz")
 
 # remove short segments
