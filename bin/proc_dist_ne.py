@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
-import ibdutils.utils.ibdutils as ibdutils
-import ibdutils.runner.ibdne as ibdne
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
+
+import ibdutils.runner.ibdne as ibdne
+import ibdutils.utils.ibdutils as ibdutils
 
 ibd_jar_default = str(Path(__file__).parent / "ibdne.jar")
 
@@ -95,9 +96,10 @@ ibd.pickle_dump(f"{label}_orig.ibdne.ibdobj.gz")
 
 ibd2 = ibd.duplicate(f"{label}_rmpeaks")
 ibd2.remove_peaks()
+ibd2.cut_and_split_ibd()
 
 # save of OBJ copy
-ibd.pickle_dump(f"{label}_rmpeaks.ibdne.ibdobj.gz")
+ibd2.pickle_dump(f"{label}_rmpeaks.ibdne.ibdobj.gz")
 
 
 # ---- save ibd for ibdne call
