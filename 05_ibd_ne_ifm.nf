@@ -19,16 +19,24 @@ params.ibdne_mincm = 4
 params.ibdne_minregion = 10
 
 // infomap parameter grid
-params.ifm_transform_lst = ["square", "cube", "none"]
-params.ifm_mincm_lst = [2, 4, 6]
-params.ifm_mingwcm_lst = [2, 4, 5, 12]
-params.ifm_ntrials_lst = [1000]
+params.ifm_transform_lst = "square,cube,none"
+params.ifm_mincm_lst = "2,4,6"
+params.ifm_mingwcm_lst = "2,4,5,12"
+params.ifm_ntrials_lst = "1000"
+// params.ifm_rmchr_lst="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14"
+params.ifm_rmchr_lst="0" // 0 means not removing any chromosome when call infomap
+// otherwise iterate the list and each time remove a single chr before running infomap
 
 // imputed vcf (glob string, work with pattern such as '*.vcf.gz')
 params.vcf = 'input/*.vcf.gz'  // test data can be found ./test_data/SAM_imputed.vcf.gz
 params.meta = ""
 
 def publish_dir = "${params.outdir ?: launchDir}/05_ibdanalysis"
+
+def to_lst(value){
+    def lst = "${value}".split(",").collect{it};
+    return lst
+}
 
 // logging params
 process LOG_PARAMS {
@@ -193,7 +201,7 @@ process RUN_INFOMAP {
     stub:
     def cut_mode = are_peaks_removed? 'rmpeaks': 'orig'
     def ifm_params_str = [ifm_params.transform, ifm_params.ifm_mincm, 
-        ifm_params.ifm_mingwcm, ifm_params.ntrials].join("_")
+        ifm_params.ifm_mingwcm, ifm_params.ntrials,ifm_params.ifm_rmchr].join("_")
     """
     touch ${label}_${cut_mode}_${ifm_params_str}_member.pq
     """
@@ -242,13 +250,15 @@ workflow WF_IBD_ANALYSES {
 
         RUN_IBDNE(ch_ne_in)
 
-        ch_ifm_params_grid = Channel.fromList(params.ifm_transform_lst)
-            .combine( Channel.fromList(params.ifm_mincm_lst))
-            .combine( Channel.fromList(params.ifm_mingwcm_lst))
-            .combine( Channel.fromList(params.ifm_ntrials_lst))
-            .filter{trans, mincm, mingwcm, ntrials -> mincm<=mingwcm}
-            .map {trans, mincm, mingwcm, ntrials -> 
-                [transform: trans, ifm_mincm: mincm, ifm_mingwcm: mingwcm, ntrials: ntrials]
+        ch_ifm_params_grid = Channel.fromList(to_lst(params.ifm_transform_lst))
+            .combine( Channel.fromList(to_lst(params.ifm_mincm_lst)) )
+            .combine( Channel.fromList(to_lst(params.ifm_mingwcm_lst)) )
+            .combine( Channel.fromList(to_lst(params.ifm_ntrials_lst)) )
+            .combine( Channel.fromList(to_lst(params.ifm_rmchr_lst)) )
+            .filter{trans, mincm, mingwcm, ntrials, rmchr -> mincm<=mingwcm}
+            .map {trans, mincm, mingwcm, ntrials, rmchr -> 
+                [transform: trans, ifm_mincm: mincm, ifm_mingwcm: mingwcm, 
+                    ntrials: ntrials, ifm_rmchr: rmchr]
             }//.view()
 
         ch_ifm_in = (
@@ -262,7 +272,7 @@ workflow WF_IBD_ANALYSES {
         RUN_INFOMAP.out//.view()
 }
 
-// Testing only. It will not be called when included as a module
+// Note this will not be called when included as a module
 workflow {
 
     ch_vcf = Channel.fromPath(params.vcf)
