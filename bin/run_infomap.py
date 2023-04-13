@@ -13,7 +13,7 @@ def parse_args():
     p.add_argument("--meta", type=str, default="")
     p.add_argument("--label", type=str, required=True)
     p.add_argument("--cut_mode", type=str, required=True)
-    p.add_argument("--ntrails", type=int, default=1000)
+    p.add_argument("--ntrials", type=int, default=1000)
     p.add_argument(
         "--transform", type=str, choices=["square", "cube", "none"], default="square"
     )
@@ -23,7 +23,7 @@ def parse_args():
     if args.transform == "none":
         args.transform = None
 
-    return p.parse_args()
+    return args
 
 
 def run(args) -> pd.DataFrame:
@@ -41,7 +41,7 @@ def run(args) -> pd.DataFrame:
 
     mat = ibd.make_ibd_matrix(min_seg_cm=args.ifm_mincm, min_gw_ibd_cm=args.ifm_mingwcm)
     member_df = ibd.call_infomap_get_member_df(
-        mat, meta, trials=args.ntrails, transform=args.transform
+        mat, meta, trials=args.ntrials, transform=args.transform
     )
 
     return member_df
@@ -49,9 +49,17 @@ def run(args) -> pd.DataFrame:
 
 def main():
     args = parse_args()
+    print(args)
     member_df = run(args)
 
-    ofs = f"{args.label}_{args.cut_mode}_member.pq"
+    ifm_params_str = "_".join(
+        [
+            str(e)
+            for e in [args.transform, args.ifm_mincm, args.ifm_mingwcm, args.ntrials]
+        ]
+    )
+
+    ofs = f"{args.label}_{args.cut_mode}_{ifm_params_str}_member.pq"
     member_df.to_parquet(ofs)
     print(member_df)
 

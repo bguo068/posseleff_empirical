@@ -18,9 +18,11 @@ params.mincm = 2.0
 params.ibdne_mincm = 4
 params.ibdne_minregion = 10
 
-// infomap parameters
-params.ifm_transform = ["square", "cube", "none"][0]
-params.ifm_ntrails = 1000
+// infomap parameter grid
+params.ifm_transform_lst = ["square", "cube", "none"]
+params.ifm_mincm_lst = [2, 4, 6]
+params.ifm_mingwcm_lst = [2, 4, 5, 12]
+params.ifm_ntrials_lst = [1000]
 
 // imputed vcf (glob string, work with pattern such as '*.vcf.gz')
 params.vcf = 'input/*.vcf.gz'  // test data can be found ./test_data/SAM_imputed.vcf.gz
@@ -173,27 +175,27 @@ process RUN_INFOMAP {
     tag "${label}_${are_peaks_removed}"
     publishDir "${publish_dir}/${label}/ifm_output/",  mode: 'symlink'
     input:
-        tuple val(label), path(ibd_obj), val(are_peaks_removed)
+        tuple val(label), path(ibd_obj), val(are_peaks_removed), val(ifm_params)
     output:
         tuple val(label), val(are_peaks_removed), path("*_member.pq")
     script:
     def meta = params.meta ? file(params.meta) : ''
     def cut_mode = are_peaks_removed? 'rmpeaks': 'orig'
-    def args_local = [
+    def args_local = (ifm_params + [ // add infomap param here - ifm_params
         ibd_obj: ibd_obj,
         meta: meta,
         label: label,
         cut_mode: cut_mode,
-        ntrails: params.ifm_ntrails,
-        transform: params.ifm_transform,
-    ].collect{k, v-> v ? "--${k} ${v}": " "}.join(" ")
+    ]).collect{k, v-> v ? "--${k} ${v}": " "}.join(" ")
     """
     run_infomap.py ${args_local}
     """
     stub:
     def cut_mode = are_peaks_removed? 'rmpeaks': 'orig'
+    def ifm_params_str = [ifm_params.transform, ifm_params.ifm_mincm, 
+        ifm_params.ifm_mingwcm, ifm_params.ntrials].join("_")
     """
-    touch ${label}_${cut_mode}_member.pq
+    touch ${label}_${cut_mode}_${ifm_params_str}_member.pq
     """
 }
 
@@ -240,13 +242,24 @@ workflow WF_IBD_ANALYSES {
 
         RUN_IBDNE(ch_ne_in)
 
+        ch_ifm_params_grid = Channel.fromList(params.ifm_transform_lst)
+            .combine( Channel.fromList(params.ifm_mincm_lst))
+            .combine( Channel.fromList(params.ifm_mingwcm_lst))
+            .combine( Channel.fromList(params.ifm_ntrials_lst))
+            .filter{trans, mincm, mingwcm, ntrials -> mincm<=mingwcm}
+            .map {trans, mincm, mingwcm, ntrials -> 
+                [transform: trans, ifm_mincm: mincm, ifm_mingwcm: mingwcm, ntrials: ntrials]
+            }//.view()
+
         ch_ifm_in = (
             PROC_INFOMAP.out.ifm_orig_ibd_obj.map{label, ibd->[label, ibd, false]}
         ).concat(
             PROC_INFOMAP.out.ifm_rmpeaks_ibd_obj.map{label, ibd->[label, ibd, true]}
-        )
+        ).combine(ch_ifm_params_grid) // [label, ibd, t_or_f, ifm_params]
 
         RUN_INFOMAP(ch_ifm_in)
+
+        RUN_INFOMAP.out//.view()
 }
 
 // Testing only. It will not be called when included as a module
