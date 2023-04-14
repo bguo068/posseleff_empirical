@@ -96,7 +96,8 @@ ibd.pickle_dump(f"{label}_orig.ibdne.ibdobj.gz")
 
 ibd2 = ibd.duplicate(f"{label}_rmpeaks")
 ibd2.remove_peaks()
-ibd2.cut_and_split_ibd()
+
+ibd2._df = ibd2.cut_and_split_ibd()
 
 # save of OBJ copy
 ibd2.pickle_dump(f"{label}_rmpeaks.ibdne.ibdobj.gz")
