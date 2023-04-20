@@ -15,16 +15,16 @@ params.r = 6.67e-7
 params.maf = params.test ? 0.00001: 0.01
 params.mincm = 2.0
 
-params.ibdne_mincm = 4
+params.ibdne_mincm = 2
 params.ibdne_minregion = 10
+params.ibdne_flatmeth = 'none'
 
 // infomap parameter grid
-params.ifm_transform_lst = "square,cube,none"
-params.ifm_mincm_lst = "2,4,6"
-params.ifm_mingwcm_lst = "2,4,5,12"
+params.ifm_transform_lst = "square" // "square,cube,none"
+params.ifm_mincm_lst = "4" // "2,4,6"
+params.ifm_mingwcm_lst = "5" //  "2,4,5,12"
 params.ifm_ntrials_lst = "1000"
-// params.ifm_rmchr_lst="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14"
-params.ifm_rmchr_lst="0" // 0 means not removing any chromosome when call infomap
+params.ifm_rmchr_lst="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14" // 0 means not removing any chromosome when call infomap
 // otherwise iterate the list and each time remove a single chr before running infomap
 
 // imputed vcf (glob string, work with pattern such as '*.vcf.gz')
@@ -117,6 +117,9 @@ process PROC_DIST_NE {
         ibd_files: "${ibd_lst}", // path is a blank separate list
         vcf_files: "${vcf_lst}", // path is a blank separate list
         label: label,
+        ibdne_mincm: params.ibdne_mincm,
+        ibdne_minregion: params.ibdne_minregion,
+        ibdne_flatmeth: params.ibdne_flatmeth,
     ].collect{k, v-> "--${k} ${v}"}.join(" ")
     """
     proc_dist_ne.py ${args_local}
