@@ -15,9 +15,9 @@ params.r = 6.67e-7
 params.maf = params.test ? 0.00001: 0.01
 params.mincm = 2.0
 
-params.ibdne_mincm = 2
-params.ibdne_minregion = 10
-params.ibdne_flatmeth = 'none'
+params.ibdne_mincm = 2// "2,4" //
+params.ibdne_minregion = 10 // "10,20,50"
+params.ibdne_flatmeth = 'none' // "none,merge,keep_hap_1_only" 
 
 // infomap parameter grid
 params.ifm_transform_lst = "square" // "square,cube,none"
@@ -103,7 +103,7 @@ process PROC_DIST_NE {
     publishDir "${publish_dir}/${label}/ibdobj/", pattern: "*.ibdobj.gz", mode: 'symlink'
 
     input:
-        tuple val(label), path(ibd_lst), path(vcf_lst)
+        tuple val(label), path(ibd_lst), path(vcf_lst), val(proc_ne_params)
     output:
         tuple val(label), path("ibdne.jar"), path("*_orig.sh"), \
                 path("*_orig.map"), path("*_orig.ibd.gz"), emit: ne_input_orig
@@ -113,14 +113,11 @@ process PROC_DIST_NE {
         tuple val(label), path("*.ibdcov.ibdobj.gz"), emit: cov_ibd_obj
         tuple val(label), path("*.ibdne.ibdobj.gz"), emit: ne_ibd_obj
     script:
-    def args_local = [
+    def args_local = ([
         ibd_files: "${ibd_lst}", // path is a blank separate list
         vcf_files: "${vcf_lst}", // path is a blank separate list
-        label: label,
-        ibdne_mincm: params.ibdne_mincm,
-        ibdne_minregion: params.ibdne_minregion,
-        ibdne_flatmeth: params.ibdne_flatmeth,
-    ].collect{k, v-> "--${k} ${v}"}.join(" ")
+        label: label] + proc_ne_params
+    ).collect{k, v-> "--${k} ${v}"}.join(" ")
     """
     proc_dist_ne.py ${args_local}
     """
@@ -239,9 +236,19 @@ workflow WF_IBD_ANALYSES {
             .map{label, ll->
                 [label, ll.collect{arr->arr[1]},ll.collect{arr->arr[2]} ] }
 
-        PROC_DIST_NE(ch_ibd_gw)
+        ch_proc_ne_params = Channel.fromList(to_lst(params.ibdne_mincm))
+            .combine(Channel.fromList(to_lst(params.ibdne_minregion)))
+            .combine(Channel.fromList(to_lst(params.ibdne_flatmeth)))
+            .map{ibdne_mincm, ibdne_minregion, ibdne_flatmeth -> 
+                [ibdne_mincm: ibdne_mincm, ibdne_minregion: ibdne_minregion, ibdne_flatmeth: ibdne_flatmeth]
+            }
+
+        ch_in_proc_dist_ne = ch_ibd_gw.combine(ch_proc_ne_params)
+
+        PROC_DIST_NE(ch_in_proc_dist_ne)
 
         PROC_INFOMAP(ch_ibd_gw)
+
 
         ch_ne_in = (
             PROC_DIST_NE.out.ne_input_orig.map{label, ibdne_jar, script, gmap, ibd ->

@@ -19,6 +19,8 @@ pa.add_argument("--ibdne_minregion", type=float, default=10)
 pa.add_argument("--ibdne_flatmeth", type=str, default="none")
 args = pa.parse_args()
 assert args.ibdne_jar is not None
+if args.ibdne_flatmeth is None:
+    args.ibdne_flatmeth == 'none'
 assert args.ibdne_flatmeth in ["none", "merge", "keep_hap_1_only"]
 
 # output prefix string
