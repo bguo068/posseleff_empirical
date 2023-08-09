@@ -166,7 +166,7 @@ process DEPLOID_PHASE_POLYCLONAL {
 // done at two levels, so that each level only opens a relatively small number
 // of single-sample VCF files.
 // 
-// Note the level merge also include the monoclonal samples of the sample group.
+// Note the level 1 merge also include the monoclonal samples of the sample group.
 // After this process, both the monoclonal samples and the polyclonal samples with
 // dominant haplotype are merged. 
 
@@ -207,7 +207,7 @@ process BCFTOOLS_MERGE_WITH_MONOCLONALS_FILETER_SUBPOP {
     input: tuple val(grp), path(vcfs), path(vcf_idxs), stdin 
     output: tuple val(grp), path("${grp}_merged.vcf.gz")
     script: 
-        def is_single_path = vcfs instanceof nextflow.processor.TaskPath  // in case there is only some sample per group
+        def is_single_path = vcfs instanceof nextflow.processor.TaskPath  // in case there is only one sample per group
         if(is_single_path)
             """ cat - > file_list.txt; bcftools view -i "F_MISSING<0.3" ${vcfs} -Oz -o ${grp}_merged.vcf.gz """
         else
