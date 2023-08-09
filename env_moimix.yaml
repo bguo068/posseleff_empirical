@@ -1,3 +1,9 @@
+# This is not needed if you have followed the readme file and installed the R
+# packages within the main Conda environment `empirical`.  It is useful if want
+# to separate the R environtment from the main Conda environtment
+
+# This recipe provides more dependencies (in binary format) required when
+# installing moimix so that less time is used for fresh compiliation.
 name: moimix
 channels:
   - conda-forge
@@ -33,6 +39,7 @@ dependencies:
   - r-modeltools=0.2_23
   - r-scales=1.2.1
   # -----------------------------------------
+  # NOTE: you still need to install moimix itself within the Conda environment
   # install moimix package within R
   # $ R
   # > BiocManager::install("bahlolab/moimix")
