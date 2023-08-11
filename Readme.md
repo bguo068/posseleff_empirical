@@ -93,14 +93,22 @@ nextflow pipeline with the input files.
 
 ### **1. Vcf file table**: 
 
-Vcf file table is a two-column table:
-- Header: none
-- Delimiter: tab
-- The first column represents the genome interval
-    - Genome interval format: `[Chromosome]:[Start]-[End]`
-- The second column provides the full path to the joint-call VCF file for the given genome interval
-    - The VCF file should include the hard filter/vqsr filter annotations in the FILTER columns. See the output of the [`snp_call_nf`](https://github.com/bguo068/snp_call_nf/tree/main) pipeline
-    - VCF files for different genome intervals should contain the same set of samples
+The VCF file table is organized in a two-column format:
+- Header: None
+- Delimiter: Tab
+- Column 1: Represents the genome interval
+  - Format for genome interval: `[Chromosome]:[Start]-[End]`
+- Column 2: Provides the full path to the joint-call VCF file corresponding to
+the specified genome interval
+  - It's essential that VCF files for different genome intervals include the same set of samples.
+  - The VCF file should contain annotations for the hard filter/vqsr filter
+  within the FILTER columns. Refer to the output from the
+  [`snp_call_nf`](https://github.com/bguo068/snp_call_nf/tree/main) pipeline for
+  more information.
+  - For those interested in reproducing the VCF files via `snp_call_nf`
+  pipeline, you can find the accession numbers of WGS data for the samples used
+  in this study within the `samples` folder.
+
 
 Example file `interval_vcf_table.tsv`
 ```
