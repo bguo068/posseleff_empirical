@@ -15,6 +15,10 @@ params.r = 6.67e-7
 params.maf = params.test ? 0.00001: 0.01
 params.mincm = 2.0
 
+// peak filtering methods
+params.peak_validate_meth = 'xirs' // 'xirs' or 'ihs'
+
+params.ibdne_no_diploid_convertion = false
 params.ibdne_mincm = 2// "2,4" //
 params.ibdne_minregion = 10 // "10,20,50"
 params.ibdne_flatmeth = 'none' // "none,merge,keep_hap_1_only" 
@@ -116,6 +120,8 @@ process PROC_DIST_NE {
     def args_local = ([
         ibd_files: "${ibd_lst}", // path is a blank separate list
         vcf_files: "${vcf_lst}", // path is a blank separate list
+        peak_validate_meth: params.peak_validate_meth,
+        ibdne_no_diploid_conversion: params.ibdne_no_diploid_convertion,
         label: label] + proc_ne_params
     ).collect{k, v-> "--${k} ${v}"}.join(" ")
     """
@@ -147,6 +153,8 @@ process PROC_INFOMAP {
     def args_local = [
         ibd_files: "${ibd_lst}", // path is a blank separate list
         vcf_files: "${vcf_lst}", // path is a blank separate list
+        peak_validate_meth: params.peak_validate_meth,
+        ibdne_no_diploid_conversion: params.ibdne_no_diploid_convertion,
         label: label,
     ].collect{k, v-> "--${k} ${v}"}.join(" ")
     """
