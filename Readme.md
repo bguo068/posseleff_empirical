@@ -225,12 +225,6 @@ https://doi.org/10.1101/2023.07.14.549114
 
 Other citations:
 
-- `Xir,s` statistics: 
-> Henden, L., Lee, S., Mueller, I., Barry, A., & Bahlo, M. (2018).
-Identity-by-descent analyses for measuring population dynamics and selection in
-recombining pathogens. PLoS genetics, 14(5), e1007279.
-https://doi.org/10.1371/journal.pgen.1007279
-
 - `IBDNe`
 > Browning, S. R., & Browning, B. L. (2015). Accurate Non-parametric Estimation
 of Recent Effective Population Size from Segments of Identity by Descent.
@@ -265,6 +259,12 @@ pairwise identity by descent between haploid genotypes. Malar J. 2018 May
 > Browning, B. L., Zhou, Y., & Browning, S. R. (2018). A One-Penny Imputed
 Genome from Next-Generation Reference Panels. American journal of human
 genetics, 103(3), 338–348. https://doi.org/10.1016/j.ajhg.2018.07.015
+
+- `scikit-allel` (calculate iHS statistics)
+
+https://zenodo.org/records/8326460
+
+https://github.com/cggh/scikit-allel
 
 - `moimix`
 https://github.com/bahlolab/moimix
