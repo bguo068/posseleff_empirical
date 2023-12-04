@@ -16,9 +16,9 @@ params.maf = params.test ? 0.00001: 0.01
 params.mincm = 2.0
 
 // peak filtering methods
-params.peak_validate_meth = 'xirs' // 'xirs' or 'ihs'
+params.peak_validate_meth = 'ihs' // 'xirs' or 'ihs'
 
-params.ibdne_no_diploid_convertion = false
+params.ibdne_no_diploid_convertion = "true"
 params.ibdne_mincm = 2// "2,4" //
 params.ibdne_minregion = 10 // "10,20,50"
 params.ibdne_flatmeth = 'none' // "none,merge,keep_hap_1_only" 
