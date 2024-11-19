@@ -246,10 +246,11 @@ process PUBLISH_MONO_ONLY_VCF {
     tag "${grp}"
     publishDir "${publish_dir}/05_phased_imputed_polyclonal_monoclonal", mode: 'symlink'
     input: tuple val(grp), path(mono_only_vcf)
-    output: tuple val(grp), path(mono_only_vcf)
+    output: tuple val(grp), path("*_exported.vcf.gz")
     script: 
-    '''
-    '''
+    """
+    cp ${mono_only_vcf} ${mono_only_vcf.getSimpleName() + "_exported.vcf.gz"}
+    """
 }
 
 workflow WF_PHASE_IMPUTE_POLYCLONAL {
