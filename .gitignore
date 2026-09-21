@@ -7,3 +7,6 @@ bin/hmmIBD
 samples/**
 !samples/explain_readme.py
 !samples/Readme.md
+# pixi environments
+.pixi/*
+!.pixi/config.toml
