@@ -140,7 +140,7 @@ process DEPLOID_PHASE_POLYCLONAL {
         bcftools view tmp.vcf -S which.txt | bcftools reheader -s new_sample_name.txt | bcftools view -Oz -o tmp2.vcf.gz
 
         # convert haploid to homozygous diploid
-        zcat tmp2.vcf.gz \
+        gzip -dc tmp2.vcf.gz \
             | awk -v OFS='\t' -v FS='\t' '/^#/{print \$0} /^[^#]/{\$10=\$10 "|" \$10; print \$0}' \
             | bgzip -c > tmp3.vcf.gz
 
