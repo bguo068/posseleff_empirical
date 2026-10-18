@@ -4,6 +4,8 @@ tmp/
 work/
 results/
 bin/hmmIBD
+bin/bcftk
+bin/dEploid
 samples/**
 !samples/explain_readme.py
 !samples/Readme.md
