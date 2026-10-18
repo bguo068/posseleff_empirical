@@ -47,42 +47,19 @@ process BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES {
     """
 }
 
-// This process converts population VCF files into the GDS file format as
-// required by the `moimix` package
+// This process calculate moi based population VCF files using bcftk/calcfws
 //
-// NOTE: seqVcf2Gds is very slow but can be parallelized by specifying the `parallel`
-// argument.
-process SEQARRAY_VCF_TO_GDS {
-    tag "$grp"
-    publishDir "${publish_dir}/03_seqarray_gds", mode: 'symlink'
-    input: tuple val(grp), path(vcf)
-    output: tuple val(grp), path("*.gds")
-    script: """#! /usr/bin/env Rscript
-        library(SeqArray); seqVCF2GDS("${vcf}", "${grp}.gds", parallel=${task.cpus})
-        """
-    stub:
-    """
-    touch ${grp}.gds
-    """
-}
-
-// Run moimix to generate Fws table for each samples of a population
-//
-// NOTE: Both seqVcf2Gds and GetFws need a lot memory shoud use a dyanmic meory disignation
-process R_MOIMIX_FWS {
+// Generate Fws table for each samples of a population
+process BCFTK_MOIMIX_FWS {
     tag "$grp"
     publishDir "${publish_dir}/04_moimix_fws", mode: 'symlink'
-    input: tuple val(grp), path(gds)
+    input: tuple val(grp), path(vcf)
     output: tuple val(grp), path("*.fws.txt")
-    script: """#! /usr/bin/env Rscript
-        library(SeqArray)
-        library("moimix")
-        isolates <- seqOpen("${gds}")
-        sample.id <- seqGetData(isolates, "sample.id")
-        fws_all <- getFws(isolates)
-        df = data.frame(sample.id, fws_all)
-        write.table(df, "${grp}.fws.txt", sep="\t", row.names=FALSE, quote=FALSE)
-        """
+    script:
+    """
+    bcftk calcfws ${vcf} --output ${grp}.fws.txt
+    """
+
     stub:
     """
     touch ${grp}.fws.txt
@@ -90,7 +67,7 @@ process R_MOIMIX_FWS {
 }
 
 workflow WF_CALC_POP_FWS {
-    take: 
+    take:
         ch_input_vcf // Format: tuple val(interval), path(vcf_gz)
         ch_input_subpop // Format: tumple val(group_name), path(sample_list_file)
     main:
@@ -104,16 +81,13 @@ workflow WF_CALC_POP_FWS {
     BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES(ch_input_subpop, ch_merged_vcf)
 
     ch_subpop_vcf = BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES.out
-    SEQARRAY_VCF_TO_GDS(ch_subpop_vcf)
+    BCFTK_MOIMIX_FWS(ch_subpop_vcf)
 
-    ch_gds = SEQARRAY_VCF_TO_GDS.out
-    R_MOIMIX_FWS(ch_gds)
-
-    ch_fws = R_MOIMIX_FWS.out
+    ch_fws = BCFTK_MOIMIX_FWS.out
 
     emit:
         ch_fws //Format tuple val(grp), path(grp_fws_txt)
-        ch_subpop_vcf //tuple val(grp), path("${grp}.vcf.gz") 
+        ch_subpop_vcf //tuple val(grp), path("${grp}.vcf.gz")
 }
 
 // --------------------- FOR TESTING -------------------------------
