@@ -24,7 +24,6 @@ else
     make  -j 10
 fi
 
-mkdir -p ../.pixi/envs/default/bin
-cp dEploid ../.pixi/envs/default/bin/
+cp dEploid ../bin/
 cd ..
 rm -rf dEploid
