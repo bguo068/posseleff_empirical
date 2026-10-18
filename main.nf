@@ -13,16 +13,25 @@ workflow {
         .map{
             assert it.size() == 2
             def interval = it[0]
-            def vcf = file(it[1], type: 'file', checkIfExists: params.test? false:true)
+            def vcf = file(it[1])
+            if (!vcf.isAbsolute()){
+                vcf = file("${projectDir}/${it[1]}")
+            }
             return [interval, vcf]
         }
 
     ch_input_subpop = channel.fromPath(params.input_subpop_fn)
+    .view { "FILE: ${it}" }
     .splitCsv(sep: '\t')
+    .view { "ROW: $it" }
     .map{
+        print("${it}")
         assert it.size() == 2
         def grp = it[0]
-        def sample_list_file = file(it[1], checkIfExists: true, type: 'file')
+        def sample_list_file = file(it[1])
+        if (!sample_list_file.isAbsolute()){
+            sample_lst_file = file("${projectDir}/${it[1]}")
+        }
         return [grp, sample_list_file]
     }
     
