@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 params.beagle_options = ''
 params.beagle_jar = "${projectDir}/lib/beagle.08Feb22.fa4.jar"
-params.gmap = "/autofs/projects-t3/toconnor_grp/bing.guo/ref/recombination_map/Pf3D7_all.txt"
+params.gmap = "$projectDir/assets/Pf3D7_all.txt"
 params.deploid_nopanel_options = "-rate 8 -burn 0.67 -k 4"
 def publish_dir = "${params.outdir ?: launchDir}/03_phase_impute_monoclonal"
 
