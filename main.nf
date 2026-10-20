@@ -21,11 +21,8 @@ workflow {
         }
 
     ch_input_subpop = channel.fromPath(params.input_subpop_fn)
-    .view { "FILE: ${it}" }
     .splitCsv(sep: '\t')
-    .view { "ROW: $it" }
     .map{
-        print("${it}")
         assert it.size() == 2
         def grp = it[0]
         def sample_list_file = file(it[1])
