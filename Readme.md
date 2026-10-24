@@ -18,6 +18,10 @@ specified in the installation instruction below. The overall installation time
 is about 5-30 minutes. The process is relatively long due to the
 compliation of the R package 'moimix' and its dependencies.
 
+With [pixi](https://pixi.sh): `pixi install`, then `pixi run setup` to build
+the tools the pipeline runs from `bin/` (dEploid, bcftk, hmmIBD). The
+Conda-based steps below are the older alternative.
+
 1. Install [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html)
 2. Install [Conda](https://docs.conda.io/en/latest/miniconda.html)
 3. Create a Conda evironment from a provided recipe: `conda env create -f ./env.ymal`

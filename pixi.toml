@@ -65,4 +65,9 @@ install-deploid = {cmd = "pixi run -e compile bash bin/install_depoid.sh", outpu
 
 install-bcftk = {cmd="pixi run -e compile git clone git@github.com:bguo068/bcftk.git && cd bcftk && pixi run -e compile cargo build --release && cd .. && cp bcftk/target/release/bcftk bin/ && rm -rf bcftk", outputs=["bin/bcftk"]}
 
-test = {cmd = "nextflow main.nf -resume --input_vcf_fn ./test_data/vcf.txt --input_subpop_fn ./test_data/subpop.txt", depends-on = ["install-deploid", "install-bcftk"] }
+install-hmmibd = {cmd = "pixi run -e compile bash bin/install_hmmibd.sh", outputs=["bin/hmmIBD"]}
+
+# Build every tool the pipeline runs from bin/.
+setup = {depends-on = ["install-deploid", "install-bcftk", "install-hmmibd"]}
+
+test = {cmd = "nextflow main.nf -resume --input_vcf_fn ./test_data/vcf.txt --input_subpop_fn ./test_data/subpop.txt", depends-on = ["setup"] }

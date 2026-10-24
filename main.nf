@@ -27,7 +27,7 @@ workflow {
         def grp = it[0]
         def sample_list_file = file(it[1])
         if (!sample_list_file.isAbsolute()){
-            sample_lst_file = file("${projectDir}/${it[1]}")
+            sample_list_file = file("${projectDir}/${it[1]}")
         }
         return [grp, sample_list_file]
     }

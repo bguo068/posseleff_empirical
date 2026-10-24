@@ -4,7 +4,7 @@ params.hapibd_options = ''
 params.beagle_options = 'overlap=3.0' // default is 2.0, cause error for some vcf files
 params.deploid_panel_size = 16 
 params.beagle_jar = "${projectDir}/lib/beagle.08Feb22.fa4.jar"
-params.gmap = "/autofs/projects-t3/toconnor_grp/bing.guo/ref/recombination_map/Pf3D7_all.txt"
+params.gmap = "$projectDir/assets/Pf3D7_all.txt"
 params.deploid_panel_options = "-nSample 250 -rate 8 -burn 0.67 -k 4 -ibd"
 def publish_dir = "${params.outdir ?: launchDir}/04_phase_impute_polyclonal"
 
