@@ -55,6 +55,9 @@ rust = "*"
 cppunit = "*"
 zlib = "*"
 git = "*"
+# bindgen (building bcftk) needs libclang and clang's own headers.
+libclang = "*"
+clang = "*"
 
 [environments]
 compile = ["compile"]
@@ -63,7 +66,7 @@ compile = ["compile"]
 
 install-deploid = {cmd = "pixi run -e compile bash bin/install_depoid.sh", outputs=["bin/dEploid"]}
 
-install-bcftk = {cmd="pixi run -e compile git clone git@github.com:bguo068/bcftk.git && cd bcftk && pixi run -e compile cargo build --release && cd .. && cp bcftk/target/release/bcftk bin/ && rm -rf bcftk", outputs=["bin/bcftk"]}
+install-bcftk = {cmd = "pixi run -e compile bash bin/install_bcftk.sh", outputs=["bin/bcftk"]}
 
 install-hmmibd = {cmd = "pixi run -e compile bash bin/install_hmmibd.sh", outputs=["bin/hmmIBD"]}
 
