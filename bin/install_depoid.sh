@@ -1,7 +1,9 @@
 #! /usr/bin/env bash
-# 
-# run this script with
-# pixi run -e deploid bash install_depoid.sh
+#
+# Build dEploid into bin/dEploid. Run with: pixi run install-deploid (in the
+# `compile` environment).
+set -euo pipefail
+if [ -x bin/dEploid ]; then echo "dEploid already available in bin/"; exit 0; fi
 rm -rf DEploid
 git clone --recurse-submodules https://github.com/DEploid-dev/DEploid.git
 cd DEploid
@@ -26,4 +28,4 @@ fi
 
 cp dEploid ../bin/
 cd ..
-rm -rf dEploid
+rm -rf DEploid
