@@ -27,10 +27,10 @@ process ALLEL_GENERATE_PANEL {
         """
         awk 'NR>1 && \$2>=0.95 {print \$1}' ${fws_fn} > clonal_samples.txt
         deploid_find_representives.py --vcf ${grp_vcf} --clonal_samples clonal_samples.txt --n_samples ${params.deploid_panel_size} \\
-            --out1 ${grp}_panel_samples_1.txt --out2 ${grp}_panel_samples_2.txt
+            --out ${grp}_panel_samples.txt
         bcftools index ${grp_vcf}
-        bcftools view -S ${grp}_panel_samples_2.txt ${grp_vcf} -Oz -o panel2.vcf.gz
-        deploid_panel_vcf2table.py --vcf ${grp_monomputed_vcf} --samples ${grp}_panel_samples_2.txt --panel ${grp}_panel.tsv
+        bcftools view -S ${grp}_panel_samples.txt ${grp_vcf} -Oz -o panel.vcf.gz
+        deploid_panel_vcf2table.py --vcf ${grp_monomputed_vcf} --samples ${grp}_panel_samples.txt --panel ${grp}_panel.tsv
         """
     stub:
     """

@@ -1,20 +1,14 @@
 #! /usr/bin/env python3
 
 import allel
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy
-import seaborn as sns
-from scipy.cluster.hierarchy import dendrogram, leaves_list, to_tree, ward
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.impute import KNNImputer
 import argparse
 import sys
 
 # parsing arguments
 parser = argparse.ArgumentParser(
-    description="Using two method to find most n diverse subset of samples"
+    description="Find the n most diverse subset of samples (maxDists method)"
 )
 parser.add_argument(
     "--vcf",
@@ -32,13 +26,7 @@ parser.add_argument(
     "--n_samples", type=int, required=True, help="how many sample you want to return"
 )
 parser.add_argument(
-    "--out1",
-    type=str,
-    required=True,
-    help="a file containing a subset of sample names, determined by hierachical method",
-)
-parser.add_argument(
-    "--out2",
+    "--out",
     type=str,
     required=True,
     help="a file containing a subset of sample names, determined by maxDists method",
@@ -49,8 +37,7 @@ args = parser.parse_args()
 vcf = args.vcf
 clonal_samples_fn = args.clonal_samples
 n_samples = args.n_samples
-out_1 = args.out1
-out_2 = args.out2
+out = args.out
 
 try:
     clonal_samples = pd.read_csv(clonal_samples_fn, header=None)[0].drop_duplicates()
@@ -79,14 +66,8 @@ if n_loaded <= n_samples:
         f"fewer than or equal to --n_samples {n_samples}; using all of them as the panel",
         file=sys.stderr,
     )
-    rep_names_1 = callset["samples"]
-    rep_names_2 = callset["samples"]
-    pd.DataFrame({"Sample": rep_names_1}).to_csv(
-        out_1, sep="\t", header=None, index=None
-    )
-    pd.DataFrame({"Sample": rep_names_2}).to_csv(
-        out_2, sep="\t", header=None, index=None
-    )
+    rep_names = callset["samples"]
+    pd.DataFrame({"Sample": rep_names}).to_csv(out, sep="\t", header=None, index=None)
     sys.exit(0)
 
 
@@ -162,78 +143,6 @@ wsaf[np.isnan(wsaf)] = 0
 
 distance = np.matmul(wsaf.T, (1 - wsaf)) + np.matmul((1 - wsaf).T, wsaf)
 
-model = AgglomerativeClustering(
-    n_clusters=None, distance_threshold=10000, linkage="average"
-)
-
-model = model.fit(distance)
-
-
-def get_linkage_matrix(model):
-    # create the counts of samples under each node
-    counts = np.zeros(model.children_.shape[0])
-    n_samples = len(model.labels_)
-    for i, merge in enumerate(model.children_):
-        current_count = 0
-        for child_idx in merge:
-            if child_idx < n_samples:
-                current_count += 1  # leaf node
-            else:
-                current_count += counts[child_idx - n_samples]
-        counts[i] = current_count
-
-    linkage_matrix = np.column_stack(
-        [model.children_, model.distances_, counts]
-    ).astype(float)
-    return linkage_matrix
-
-
-link_mat = get_linkage_matrix(model)
-leaves = leaves_list(link_mat)
-tree_root = to_tree(link_mat)
-
-
-def get_map_from_old_id_to_reordered_id(leaves):
-    tmp = pd.DataFrame(leaves).reset_index()
-    tmp.columns = ["New", "Old"]
-    tmp = tmp.sort_values(["Old"]).set_index("Old")
-    return tmp["New"].to_numpy()
-
-
-id_map = get_map_from_old_id_to_reordered_id(leaves)
-
-
-def find_n_level_nodes(tree_root, n_levels):
-    levels = [[tree_root]]
-    while len(levels) <= n_levels:
-        last_level = levels[-1]
-        new_level = []
-        for node in last_level:
-            if node.is_leaf():
-                new_level.append(node)
-            else:
-                new_level.append(node.get_left())
-                new_level.append(node.get_right())
-        levels.append(new_level)
-    return levels[-1]
-
-
-n_levels = np.log2(n_samples).astype(np.int32)
-level_n = find_n_level_nodes(tree_root, n_levels)
-
-
-def find_representatives_for_nodes(nodes):
-    representatives = []
-    for node in nodes:
-
-        lst = node.pre_order()
-        mid = len(lst) // 2
-        representatives.append(lst[mid])
-    return representatives
-
-
-representatives = find_representatives_for_nodes(level_n)
-
 
 def find_top_n_diverse_subset(distance, N=16):
     """Adapted from maxDists:
@@ -263,50 +172,8 @@ def find_top_n_diverse_subset(distance, N=16):
     return idx
 
 
-representatives_2 = find_top_n_diverse_subset(distance, n_samples)
+representatives = find_top_n_diverse_subset(distance, n_samples)
 
+rep_names = callset["samples"][representatives]
 
-reordered = distance[:, leaves][leaves, :]
-reordered.shape
-
-
-# %%
-# m = 0.5
-# m2 = 0.2
-# h = 3
-# s = 10
-#
-# height = m + h + s + m + m2
-# width = m + s + m
-#
-# fig = plt.gcf()
-# fig.set_size_inches(width, height)
-# ax_heatmap = fig.add_axes([m / width, m / height, s / width, s / height])
-# ax_dendrogram = fig.add_axes([m / width, (m + s + m2) / height, s / width, h / height])
-#
-# dendrogram(
-#     link_mat,
-#     ax=ax_dendrogram,
-#     link_color_func=lambda k: "red" if k in [node.id for node in level_4] else "black",
-# )
-# ax_dendrogram.get_xaxis().set_visible(False)
-# ax_dendrogram.get_yaxis().set_visible(False)
-#
-#
-# ax_heatmap.imshow(reordered)
-#
-# ax_heatmap.set_yticks(id_map[representatives])
-# ax_heatmap.set_ylabel("Representatives\n clustering tree")
-#
-# ax_heatmap.set_xticks(id_map[representatives_2])
-# ax_heatmap.set_xlabel("Representatives\n (maxDists)")
-
-
-rep_names_1 = callset["samples"][representatives]
-
-
-rep_names_2 = callset["samples"][representatives_2]
-
-
-pd.DataFrame({"Sample": rep_names_1}).to_csv(out_1, sep="\t", header=None, index=None)
-pd.DataFrame({"Sample": rep_names_2}).to_csv(out_2, sep="\t", header=None, index=None)
+pd.DataFrame({"Sample": rep_names}).to_csv(out, sep="\t", header=None, index=None)
