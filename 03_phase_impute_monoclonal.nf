@@ -26,7 +26,7 @@ process BCFTOOLS_SPLIT_PREP_SINGLE_SAMPLE_VCF_AND_CALC_PLAF {
         """
         calc_plaf_from_vcf.py --vcf ${grp_vcf} --out ${grp}_plaf.tsv
 
-        awk 'NR>1 && \$2>=0.95 {print \$1}' ${fws_file} > monoclonal_samples.txt
+        awk '\$2>=0.95 {print \$1}' ${fws_file} > monoclonal_samples.txt
         split -l 400 monoclonal_samples.txt split_
         bcftools index ${grp_vcf}
         mkdir single_sample_vcfs

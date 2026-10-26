@@ -25,7 +25,7 @@ process ALLEL_GENERATE_PANEL {
     output: tuple val(grp), path("*_panel.tsv")
     script: 
         """
-        awk 'NR>1 && \$2>=0.95 {print \$1}' ${fws_fn} > clonal_samples.txt
+        awk '\$2>=0.95 {print \$1}' ${fws_fn} > clonal_samples.txt
         deploid_find_representives.py --vcf ${grp_vcf} --clonal_samples clonal_samples.txt --n_samples ${params.deploid_panel_size} \\
             --out ${grp}_panel_samples.txt
         bcftools index ${grp_vcf}
@@ -60,7 +60,7 @@ process BCFTOOLS_SPLIT_PREP_SINGLE_SAMPLE_VCF_AND_CALC_PLAF {
     script: 
         """
         calc_plaf_from_vcf.py --vcf ${grp_vcf} --out ${grp}_plaf.tsv
-        awk 'NR>1 && \$2<0.95 {print \$1}' ${fws_file} > polyclonal_samples.txt
+        awk '\$2<0.95 {print \$1}' ${fws_file} > polyclonal_samples.txt
         mkdir single_sample_vcfs
         bcftools index ${grp_vcf} 
         
