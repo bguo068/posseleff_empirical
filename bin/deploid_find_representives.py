@@ -10,6 +10,7 @@ from scipy.cluster.hierarchy import dendrogram, leaves_list, to_tree, ward
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.impute import KNNImputer
 import argparse
+import sys
 
 # parsing arguments
 parser = argparse.ArgumentParser(
@@ -51,7 +52,13 @@ n_samples = args.n_samples
 out_1 = args.out1
 out_2 = args.out2
 
-clonal_samples = pd.read_csv(clonal_samples_fn, header=None)[0]
+try:
+    clonal_samples = pd.read_csv(clonal_samples_fn, header=None)[0].drop_duplicates()
+except pd.errors.EmptyDataError:
+    clonal_samples = pd.Series([], dtype=str)
+
+if clonal_samples.size == 0:
+    sys.exit(f"ERROR: no clonal samples listed in {clonal_samples_fn}; cannot build a panel")
 
 callset = allel.read_vcf(
     vcf,
@@ -60,9 +67,18 @@ callset = allel.read_vcf(
     samples=clonal_samples.to_numpy(),  # only load data for selected samples
 )
 
-# check if vcf has few clonal sample than needed
+if callset is None or len(callset.get("samples", [])) == 0:
+    sys.exit(f"ERROR: none of the clonal samples were found in {vcf}")
 
-if clonal_samples.size <= n_samples:
+# check if vcf has few clonal sample than needed: use all of them as the panel
+
+n_loaded = len(callset["samples"])
+if n_loaded <= n_samples:
+    print(
+        f"WARNING: only {n_loaded} clonal sample(s) found in {vcf}, "
+        f"fewer than or equal to --n_samples {n_samples}; using all of them as the panel",
+        file=sys.stderr,
+    )
     rep_names_1 = callset["samples"]
     rep_names_2 = callset["samples"]
     pd.DataFrame({"Sample": rep_names_1}).to_csv(
@@ -71,7 +87,7 @@ if clonal_samples.size <= n_samples:
     pd.DataFrame({"Sample": rep_names_2}).to_csv(
         out_2, sep="\t", header=None, index=None
     )
-    exit(0)
+    sys.exit(0)
 
 
 genotypes = allel.GenotypeChunkedArray(callset["calldata/GT"])
