@@ -1,1 +1,1 @@
-rand200	test_data/200_rand_good_samples.txt
+rand6	test_data/6_selected_samples.txt

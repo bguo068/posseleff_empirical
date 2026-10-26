@@ -1,1 +1,1 @@
-all	test_data/all.passonly.subset_n200.vcf.gz
+all	test_data/all.passonly.subset_n6.vcf.gz
