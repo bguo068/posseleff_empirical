@@ -26,7 +26,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/pybedtools-0.10.0-py310h275bdba_3.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/pysam-0.23.3-py310hdd3ca3a_2.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/samtools-1.20-h50ea8bc_1.tar.bz2
-      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-23.10.1-hdfd78af_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-26.10.3-h2a3209d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/arpack-3.7.0-hdefa2d7_2.tar.bz2
@@ -399,7 +399,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c4/9f/9f52d2886d52645987d603425482c63c5045a3005db1354a7097e5ed1ae9/charset_normalizer-3.5.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       osx-arm64:
-      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-23.10.1-hdfd78af_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-26.10.3-h2a3209d_0.conda
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/bcftools-1.20-h82beb8a_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/bedtools-2.31.1-he85ad4a_3.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/htslib-1.20-ha435bb7_2.tar.bz2
@@ -718,7 +718,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/pybedtools-0.10.0-py310h275bdba_3.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/pysam-0.23.3-py310hdd3ca3a_2.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/samtools-1.20-h50ea8bc_1.tar.bz2
-      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-23.10.1-hdfd78af_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-26.10.3-h2a3209d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/arpack-3.7.0-hdefa2d7_2.tar.bz2
@@ -1079,7 +1079,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl
       osx-arm64:
-      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-23.10.1-hdfd78af_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/noarch/nextflow-26.10.3-h2a3209d_0.conda
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/bcftools-1.20-h82beb8a_1.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/bedtools-2.31.1-he85ad4a_3.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/htslib-1.20-ha435bb7_2.tar.bz2
@@ -1433,20 +1433,20 @@ packages:
     - samtools >=1.20,<2.0a0
   size: 481271
   timestamp: 1720645389066
-- conda: https://conda.anaconda.org/bioconda/noarch/nextflow-23.10.1-hdfd78af_0.tar.bz2
-  sha256: 68cced979614da34dcdbbc049ba96d80377f272b8e831daac0d676d560330805
-  md5: 632e5579b1dd5094ad079aa2be0b9795
+- conda: https://conda.anaconda.org/bioconda/noarch/nextflow-26.10.3-h2a3209d_0.conda
+  sha256: 297e0e188d76cda664b68b73e864c35b02a20b706a7b7cf6bb5968e0ac2c5715
+  md5: e64f444d15408341c4d32c8be3c352db
   depends:
   - coreutils
   - curl
-  - openjdk >=11,<=21
+  - openjdk >=17,<26
   license: Apache-2.0
   purls: []
   run_exports:
     weak:
-    - nextflow >=23.10.1,<23.11.0a0
-  size: 28684728
-  timestamp: 1705105519703
+    - nextflow >=26.10.3,<26.11.0a0
+  size: 42938980
+  timestamp: 1792516710276
 - conda: https://conda.anaconda.org/bioconda/osx-arm64/bcftools-1.20-h82beb8a_1.tar.bz2
   sha256: 8db8b81d7c4d85cfdd9a5906795596e51615f4311d55bb8b43c058c8373f2ce2
   md5: 29aeb8b4733569f10b3c7e42d206fea0
@@ -2561,7 +2561,7 @@ packages:
   license: LGPL-3.0-or-later
   license_family: LGPL
   purls:
-  - pkg:pypi/gmpy2?source=compressed-mapping
+  - pkg:pypi/gmpy2?source=hash-mapping
   run_exports: {}
   size: 312376
   timestamp: 1787066373778
@@ -6333,7 +6333,7 @@ packages:
   license: BSD-2-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/appnope?source=compressed-mapping
+  - pkg:pypi/appnope?source=hash-mapping
   run_exports: {}
   size: 12232
   timestamp: 1787337124448
@@ -6790,7 +6790,7 @@ packages:
   - python >=3.10
   license: Unlicense
   purls:
-  - pkg:pypi/filelock?source=compressed-mapping
+  - pkg:pypi/filelock?source=hash-mapping
   run_exports: {}
   size: 78858
   timestamp: 1788217445739

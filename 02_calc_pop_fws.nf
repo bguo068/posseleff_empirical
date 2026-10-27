@@ -1,16 +1,42 @@
-nextflow.enable.dsl=2
+nextflow.enable.types = true
 
-def publish_dir = "${params.outdir ?: launchDir}/02_pop_fws"
+// Parameters used when this script is run on its own (see the entry workflow
+// at the bottom). When included by main.nf, main.nf's params block is used.
+params {
+    input_subpop_fn: Path = "${launchDir}/input_subpops.tsv"
+}
+
+record IntervalVcf {
+    interval: String
+    vcf: Path
+}
+
+record SubpopSamples {
+    grp: String
+    sample_list: Path
+}
+
+record MergedBcf {
+    bcf: Path
+    csi: Path
+}
+
+// One population (group): its VCF and the Fws table of its samples
+record PopVcf {
+    grp: String
+    vcf: Path
+    fws: Path
+}
 
 // Comparator for sorting genome intervals
-def cmp_interval(String i, String j){
-    def split_i = i.split(':')
+def cmp_interval(i: String, j: String) -> Integer {
+    def split_i = i.tokenize(':')
     def chr_i = split_i[0] // chromosome name of interval i
-    def start_i = split_i.size() < 2 ? 0: split_i[1].split('-')[0].toInteger() // start of interval i
-    def split_j = j.split(':') // chromosome name of inteval j
-    def chr_j = split_j[0] // start of interval j
-    def start_j = split_j.size() < 2 ? 0: split_j[1].split('-')[0].toInteger()
-    return chr_i<=>chr_j ?: start_i <=> start_j
+    def start_i = split_i.size() < 2 ? 0 : split_i[1].tokenize('-')[0].toInteger() // start of interval i
+    def split_j = j.tokenize(':')
+    def chr_j = split_j[0] // chromosome name of interval j
+    def start_j = split_j.size() < 2 ? 0 : split_j[1].tokenize('-')[0].toInteger() // start of interval j
+    return chr_i <=> chr_j ?: start_i <=> start_j
 }
 
 // This process serves two purposes:
@@ -18,12 +44,20 @@ def cmp_interval(String i, String j){
 // - Simplify annotations fields so file sizes are minimal
 process BCFTOOLS_CONCAT_MERGE_REGIONS_SIMPLIFY_ANNOTATION {
     tag "merge_regions_samplify_annot"
-    publishDir "${publish_dir}/01_merge_regions_simplify_annot", mode: 'symlink'
-    input: tuple val(interval_lst), path(vcf_lst)
-    output: tuple path("merged.bcf"), path("merged.bcf.*")
-    script: """ bcftools concat ${vcf_lst} --threads ${task.cpus} | bcftools annotate -x INFO,^FORMAT/GT,^FORMAT/AD -Ob -o merged.bcf;
-                bcftools index merged.bcf """
+
+    input:
+    vcfs: List<Path> // sorted by genome interval
+
+    output:
+    record(bcf: file("merged.bcf"), csi: file("merged.bcf.csi"))
+
+    script:
     // NOTE: moimix needs format/AD to be in the vcf files
+    """
+    bcftools concat ${vcfs.join(' ')} --threads ${task.cpus} | bcftools annotate -x INFO,^FORMAT/GT,^FORMAT/AD -Ob -o merged.bcf;
+    bcftools index merged.bcf
+    """
+
     stub:
     """
     touch merged.bcf merged.bcf.csi
@@ -36,11 +70,20 @@ process BCFTOOLS_CONCAT_MERGE_REGIONS_SIMPLIFY_ANNOTATION {
 // NOTE: use `--force-samples` option to ignore errors when some requested
 // samples are not in the vcf file
 process BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES {
-    tag "$grp"
-    publishDir "${publish_dir}/02_subpop_vcf", mode: 'symlink'
-    input: tuple val(grp), path(sample_list_file); tuple path(merged_vcf), path(merged_vcf_idx)
-    output: tuple val(grp), path("${grp}.vcf.gz")
-    script: """bcftools view -S ${sample_list_file} ${merged_vcf} -Oz -o ${grp}.vcf.gz --force-samples"""
+    tag "${grp}"
+
+    input:
+    record(grp: String, sample_list: Path)
+    merged: MergedBcf
+
+    output:
+    record(grp: grp, vcf: file("${grp}.vcf.gz"))
+
+    script:
+    """
+    bcftools view -S ${sample_list} ${merged.bcf} -Oz -o ${grp}.vcf.gz --force-samples
+    """
+
     stub:
     """
     touch ${grp}.vcf.gz
@@ -51,10 +94,14 @@ process BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES {
 //
 // Generate Fws table for each samples of a population
 process BCFTK_MOIMIX_FWS {
-    tag "$grp"
-    publishDir "${publish_dir}/04_moimix_fws", mode: 'symlink'
-    input: tuple val(grp), path(vcf)
-    output: tuple val(grp), path("*.fws.txt")
+    tag "${grp}"
+
+    input:
+    record(grp: String, vcf: Path)
+
+    output:
+    record(grp: grp, fws: file("${grp}.fws.txt"))
+
     script:
     """
     bcftk calcfws ${vcf} --output ${grp}.fws.txt
@@ -68,43 +115,71 @@ process BCFTK_MOIMIX_FWS {
 
 workflow WF_CALC_POP_FWS {
     take:
-        ch_input_vcf // Format: tuple val(interval), path(vcf_gz)
-        ch_input_subpop // Format: tumple val(group_name), path(sample_list_file)
+    input_vcfs: Channel<IntervalVcf>
+    subpops: Channel<SubpopSamples>
+
     main:
+    val_sorted_vcfs = input_vcfs.collect()
+        .map { rs -> rs.toSorted { a, b -> cmp_interval(a.interval, b.interval) }.collect { r -> r.vcf }.toList() }
 
-    ch_input_vcf_sorted_list = ch_input_vcf.toSortedList{a, b-> cmp_interval(a[0], b[0])}
-        .map {lst -> def interval_lst = lst.collect{it[0]}; def vcf_lst = lst.collect{it[1]}; return [interval_lst, vcf_lst]}
+    val_merged = BCFTOOLS_CONCAT_MERGE_REGIONS_SIMPLIFY_ANNOTATION(val_sorted_vcfs)
 
-    BCFTOOLS_CONCAT_MERGE_REGIONS_SIMPLIFY_ANNOTATION(ch_input_vcf_sorted_list)
+    ch_subpop_vcf = BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES(subpops, val_merged)
 
-    ch_merged_vcf = BCFTOOLS_CONCAT_MERGE_REGIONS_SIMPLIFY_ANNOTATION.out
-    BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES(ch_input_subpop, ch_merged_vcf)
+    ch_fws = BCFTK_MOIMIX_FWS(ch_subpop_vcf)
 
-    ch_subpop_vcf = BCFTOOLS_VIEW_EXTRACT_SUBPOP_SAMPLES.out
-    BCFTK_MOIMIX_FWS(ch_subpop_vcf)
-
-    ch_fws = BCFTK_MOIMIX_FWS.out
+    ch_pops = ch_subpop_vcf.join(ch_fws, by: 'grp')
 
     emit:
-        ch_fws //Format tuple val(grp), path(grp_fws_txt)
-        ch_subpop_vcf //tuple val(grp), path("${grp}.vcf.gz")
+    merged: Value<MergedBcf> = val_merged
+    pops: Channel<PopVcf> = ch_pops
+}
+
+// --------------------------- PUBLISHING ---------------------------------------------
+// Where each output file goes, relative to the output directory. These are
+// shared by the output blocks of this script and main.nf.
+
+def merged_bcf_publish_paths(r: MergedBcf) -> Map {
+    def d = '02_pop_fws'
+    return [
+        (r.bcf): "${d}/01_merge_regions_simplify_annot/",
+        (r.csi): "${d}/01_merge_regions_simplify_annot/",
+    ]
+}
+
+def pop_vcf_publish_paths(r: PopVcf) -> Map {
+    def d = '02_pop_fws'
+    return [
+        (r.vcf): "${d}/02_subpop_vcf/",
+        (r.fws): "${d}/04_moimix_fws/",
+    ]
 }
 
 // --------------------- FOR TESTING -------------------------------
 // will be ignored when included as subworkflow script
-workflow{
+workflow {
+    main:
     ch_input_vcf = channel.fromPath("results/01_filt_vcf/08_maf_bcf/*.vcf.gz", checkIfExists: true)
-        .map{p-> def interval=p.getSimpleName().replaceAll(/_fmiss2_imiss2_maf/, ''); return [interval, p]}
+        .map { p -> record(interval: p.simpleName.replaceAll(/_fmiss2_imiss2_maf/, ''), vcf: p) }
 
-    ch_input_subpop = channel.fromPath(params.input_subpop_fn)
-        .splitCsv(sep: '\t')
-        .map{
-            assert it.size() == 2
-            def grp = it[0]
-            def sample_list_file = file(it[1], checkIfExists: true, type: 'file')
-            return [grp, sample_list_file]
-        }
+    def rows = params.input_subpop_fn.splitCsv(sep: '\t')
+    ch_input_subpop = channel.fromList(rows).map { row ->
+        assert row.size() == 2
+        record(grp: row[0], sample_list: file(row[1], checkIfExists: true, type: 'file'))
+    }
 
-    WF_CALC_POP_FWS(ch_input_vcf, ch_input_subpop)
+    pop_fws = WF_CALC_POP_FWS(ch_input_vcf, ch_input_subpop)
 
+    publish:
+    pop_fws_merged = pop_fws.merged
+    pop_fws = pop_fws.pops
+}
+
+output {
+    pop_fws_merged: MergedBcf {
+        path { r -> merged_bcf_publish_paths(r) }
+    }
+    pop_fws: Channel<PopVcf> {
+        path { r -> pop_vcf_publish_paths(r) }
+    }
 }
