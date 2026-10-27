@@ -5,8 +5,8 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 # parse arguments
 pa = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-pa.add_argument("--ibd_files", type=str, nargs=14, required=True)
-pa.add_argument("--vcf_files", type=str, nargs=14, required=True)
+pa.add_argument("--ibd_files", type=str, nargs="+", required=True)
+pa.add_argument("--vcf_files", type=str, nargs="+", required=True)
 pa.add_argument("--label", type=str, required=True)
 pa.add_argument(
     "--peak_validate_meth", type=str, choices=["xirs", "ihs"], default="xirs"

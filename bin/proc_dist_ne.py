@@ -10,8 +10,8 @@ ibd_jar_default = str(Path(__file__).parent / "ibdne.jar")
 
 # parse arguments
 pa = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-pa.add_argument("--ibd_files", type=str, nargs=14, required=True)
-pa.add_argument("--vcf_files", type=str, nargs=14, required=True)
+pa.add_argument("--ibd_files", type=str, nargs="+", required=True)
+pa.add_argument("--vcf_files", type=str, nargs="+", required=True)
 pa.add_argument("--label", type=str, required=True)
 pa.add_argument("--ibdne_jar", type=str, default=ibd_jar_default)
 pa.add_argument("--ibdne_mincm", type=float, default=4)
