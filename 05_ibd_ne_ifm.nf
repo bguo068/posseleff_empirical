@@ -8,8 +8,7 @@ params {
     meta: Path?
 
     chrname_map: Path = "${projectDir}/assets/chrname_map.tsv"
-    test: Boolean
-    num_chrs: Integer? // default: 2 if test else 14
+    num_chrs: Integer = 14
 
     // hmmibd
     hmmibd_n: Integer = 100
@@ -444,7 +443,7 @@ workflow {
 
     def opts = record(
         chrname_map: params.chrname_map,
-        num_chrs: params.num_chrs ?: (params.test ? 2 : 14),
+        num_chrs: params.num_chrs,
         r: params.r,
         mincm: params.mincm,
         hmmibd_n: params.hmmibd_n,
