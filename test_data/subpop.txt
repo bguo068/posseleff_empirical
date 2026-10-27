@@ -1,1 +1,1 @@
-rand6	test_data/6_selected_samples.txt
+rand36	test_data/36_selected_samples.txt
